@@ -619,6 +619,253 @@
           </div>
           <div class="permission-list" id="permission-list"></div>
         </section>
+
+        <section class="panel feature-panel">
+          <div class="panel-head compact">
+            <div>
+              <span class="panel-kicker">Payroll Records</span>
+              <h2>Employee Salary</h2>
+            </div>
+            <button class="button button-chip">Payroll</button>
+          </div>
+          <div class="salary-list" id="salary-list"></div>
+        </section>
+
+        <section class="panel feature-panel">
+          <div class="panel-head compact">
+            <div>
+              <span class="panel-kicker">Benefit Coverage</span>
+              <h2>Employee Benefits</h2>
+            </div>
+            <button class="button button-chip">Coverage</button>
+          </div>
+          <div class="benefit-list" id="benefit-list"></div>
+        </section>
+
+        <section class="panel feature-panel">
+          <div class="panel-head compact">
+            <div>
+              <span class="panel-kicker">Workforce Time</span>
+              <h2>On Leave & Timekeeping</h2>
+            </div>
+            <button class="button button-chip">Schedule</button>
+          </div>
+          <div class="leave-list" id="leave-list"></div>
+          <div class="timekeeping-list" id="timekeeping-list"></div>
+        </section>
+      </section>
+
+      <section class="workflow-grid">
+        <section class="panel workflow-panel">
+          <div class="panel-head compact">
+            <div>
+              <span class="panel-kicker">Identity Access</span>
+              <h2>Create Account</h2>
+            </div>
+            <button class="button button-chip">Admin</button>
+          </div>
+          <form class="workflow-form" id="create-account-form">
+            <div class="form-field">
+              <label for="account-name">Full Name</label>
+              <input type="text" id="account-name" name="name" placeholder="Employee name" required />
+            </div>
+            <div class="form-field">
+              <label for="account-email">Email</label>
+              <input type="email" id="account-email" name="email" placeholder="employee@companyhub.com" required />
+            </div>
+            <div class="form-field">
+              <label for="account-password">Password</label>
+              <input type="password" id="account-password" name="password" placeholder="••••••••" required />
+            </div>
+            <div class="form-field">
+              <label for="account-role">Role</label>
+              <select id="account-role" name="role" required>
+                <option value="employee">Employee</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <button class="button button-primary form-button" type="submit">Create Account</button>
+            <div class="form-message" id="account-message"></div>
+          </form>
+        </section>
+
+        <section class="panel workflow-panel">
+          <div class="panel-head compact">
+            <div>
+              <span class="panel-kicker">Employee Directory</span>
+              <h2>Check Profile</h2>
+            </div>
+            <button class="button button-chip">Self Info</button>
+          </div>
+          <form class="workflow-form" id="profile-form">
+            <div class="form-field">
+              <label for="profile-email">Employee Email</label>
+              <input type="email" id="profile-email" name="email" placeholder="employee@companyhub.com" required />
+            </div>
+            <button class="button button-primary form-button" type="submit">View Profile</button>
+            <div class="profile-result" id="profile-result">
+              <span class="profile-empty">No employee selected</span>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel workflow-panel">
+          <div class="panel-head compact">
+            <div>
+              <span class="panel-kicker">Workforce Leave</span>
+              <h2>Register Leave</h2>
+            </div>
+            <button class="button button-chip">Request</button>
+          </div>
+          <form class="workflow-form" id="leave-form">
+            <div class="form-field">
+              <label for="leave-employee">Employee</label>
+              <input type="text" id="leave-employee" name="employee" placeholder="Employee name" required />
+            </div>
+            <div class="form-field">
+              <label for="leave-department">Department</label>
+              <input type="text" id="leave-department" name="department" placeholder="Operations" required />
+            </div>
+            <div class="form-field">
+              <label for="leave-type">Leave Type</label>
+              <select id="leave-type" name="leave_type" required>
+                <option value="Annual Leave">Annual Leave</option>
+                <option value="Medical Leave">Medical Leave</option>
+                <option value="Training Leave">Training Leave</option>
+                <option value="Personal Leave">Personal Leave</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <div class="form-field">
+                <label for="leave-start-date">Start Date</label>
+                <input type="date" id="leave-start-date" name="start_date" required />
+              </div>
+              <div class="form-field">
+                <label for="leave-end-date">End Date</label>
+                <input type="date" id="leave-end-date" name="end_date" required />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-field">
+                <label for="leave-days">Days</label>
+                <input type="number" id="leave-days" name="days" min="1" value="1" required />
+              </div>
+              <div class="form-field">
+                <label for="leave-reviewer">Reviewer</label>
+                <input type="text" id="leave-reviewer" name="reviewer" placeholder="Approver" required />
+              </div>
+            </div>
+            <button class="button button-primary form-button" type="submit">Submit Leave</button>
+            <div class="form-message" id="leave-message"></div>
+          </form>
+        </section>
+
+        <section class="panel workflow-panel">
+          <div class="panel-head compact">
+            <div>
+              <span class="panel-kicker">Documents & Tasks</span>
+              <h2>Update Task</h2>
+            </div>
+            <button class="button button-chip">Task</button>
+          </div>
+          <form class="workflow-form" id="task-form">
+            <div class="form-field">
+              <label for="task-id">Task ID</label>
+              <input type="number" id="task-id" name="id" min="1" placeholder="1" required />
+            </div>
+            <div class="form-field">
+              <label for="task-title">Task Title</label>
+              <input type="text" id="task-title" name="title" placeholder="Task title" required />
+            </div>
+            <div class="form-row">
+              <div class="form-field">
+                <label for="task-status">Status</label>
+                <select id="task-status" name="status">
+                  <option value="Open">Open</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Completed">Completed</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="task-priority">Priority</label>
+                <select id="task-priority" name="priority">
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                  <option value="Critical">Critical</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-field">
+                <label for="task-due-date">Due Date</label>
+                <input type="date" id="task-due-date" name="due_date" required />
+              </div>
+              <div class="form-field">
+                <label for="task-assignee">Assignee</label>
+                <input type="text" id="task-assignee" name="assignee" placeholder="Assignee" required />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-field">
+                <label for="task-department">Department</label>
+                <input type="text" id="task-department" name="department" placeholder="Technology" required />
+              </div>
+              <div class="form-field">
+                <label for="task-document-id">Document ID</label>
+                <input type="number" id="task-document-id" name="document_id" min="1" placeholder="1" />
+              </div>
+            </div>
+            <div class="form-field">
+              <label for="task-description">Description</label>
+              <textarea id="task-description" name="description" rows="3" placeholder="Description" required></textarea>
+            </div>
+            <button class="button button-primary form-button" type="submit">Update Task</button>
+            <div class="form-message" id="task-message"></div>
+          </form>
+        </section>
+
+        <section class="panel workflow-panel">
+          <div class="panel-head compact">
+            <div>
+              <span class="panel-kicker">Leave Approver</span>
+              <h2>Approve On-Leave</h2>
+            </div>
+            <button class="button button-chip">Review</button>
+          </div>
+          <form class="workflow-form" id="approve-leave-form">
+            <div class="form-field">
+              <label for="approve-leave-id">Leave Request ID</label>
+              <input type="number" id="approve-leave-id" name="id" placeholder="1" required />
+            </div>
+            <div class="form-field">
+              <label for="approve-leave-status">Decision</label>
+              <select id="approve-leave-status" name="status">
+                <option value="Approved">Approve</option>
+                <option value="Rejected">Reject</option>
+                <option value="Pending">Pending</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="approve-leave-reviewer">Reviewer</label>
+              <input type="text" id="approve-leave-reviewer" name="reviewer" placeholder="Admin" required />
+            </div>
+            <button class="button button-primary form-button" type="submit">Submit Decision</button>
+            <div class="form-message" id="approve-leave-message"></div>
+          </form>
+        </section>
+
+        <section class="panel workflow-panel">
+          <div class="panel-head compact">
+            <div>
+              <span class="panel-kicker">Capacity Monitor</span>
+              <h2>Evaluate Employee Capacity</h2>
+            </div>
+            <button class="button button-chip">Capacity</button>
+          </div>
+          <div class="capacity-list" id="capacity-list"></div>
+        </section>
       </section>
     </main>
   </div>

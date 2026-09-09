@@ -111,6 +111,11 @@ async function loadDashboardData() {
     renderDocumentList(data.documents || []);
     renderProjectList(data.projects || []);
     renderPermissionList(data.permissions || []);
+    renderSalaryList(data.salaries || []);
+    renderBenefitList(data.benefits || []);
+    renderLeaveList(data.leave_requests || []);
+    renderTimekeepingList(data.timekeeping || []);
+    renderCapacityList(data.employee_capacity || []);
   } catch (error) {
     console.warn('Dashboard API unavailable:', error.message);
   }
@@ -208,6 +213,282 @@ function renderPermissionList(permissions) {
   `).join('');
 }
 
+function renderSalaryList(salaries) {
+  const salaryList = document.getElementById('salary-list');
+  if (!salaryList || !Array.isArray(salaries)) return;
+
+  salaryList.innerHTML = salaries.slice(0, 4).map(salary => `
+    <div class="salary-item">
+      <div class="salary-left">
+        <span class="salary-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M4 7h16v10H4z"></path>
+            <path d="M4 19h16"></path>
+          </svg>
+        </span>
+        <div>
+          <span class="salary-title">${escapeHtml(salary.employee)}</span>
+          <span class="salary-meta">${escapeHtml(salary.job_title)} · ${escapeHtml(salary.department)} · ${escapeHtml(salary.currency)} ${Number(salary.amount).toLocaleString()}</span>
+        </div>
+      </div>
+      <span class="status-label ${salary.status === 'Paid' ? '' : 'warning'}">${escapeHtml(salary.status)}</span>
+    </div>
+  `).join('');
+}
+
+function renderBenefitList(benefits) {
+  const benefitList = document.getElementById('benefit-list');
+  if (!benefitList || !Array.isArray(benefits)) return;
+
+  benefitList.innerHTML = benefits.slice(0, 4).map(benefit => `
+    <div class="benefit-item">
+      <div class="benefit-left">
+        <span class="benefit-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 3a8 8 0 1 0 8 8"></path>
+            <path d="M12 3a8 8 0 0 0 8 8"></path>
+            <path d="M12 3l-4 8 4 4 4-4z"></path>
+          </svg>
+        </span>
+        <div>
+          <span class="benefit-title">${escapeHtml(benefit.benefit_type)}</span>
+          <span class="benefit-meta">${escapeHtml(benefit.employee)} · ${escapeHtml(benefit.provider)} · ${escapeHtml(benefit.coverage)}</span>
+        </div>
+      </div>
+      <span class="status-label ${benefit.status === 'Active' ? '' : 'warning'}">${escapeHtml(benefit.status)}</span>
+    </div>
+  `).join('');
+}
+
+function renderLeaveList(leaveRequests) {
+  const leaveList = document.getElementById('leave-list');
+  if (!leaveList || !Array.isArray(leaveRequests)) return;
+
+  leaveList.innerHTML = leaveRequests.slice(0, 4).map(leave => `
+    <div class="leave-item">
+      <div class="leave-left">
+        <span class="leave-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M4 20V8l4-4h12v16z"></path>
+            <path d="M8 12h8"></path>
+          </svg>
+        </span>
+        <div>
+          <span class="leave-title">${escapeHtml(leave.employee)}</span>
+          <span class="leave-meta">${escapeHtml(leave.leave_type)} · ${escapeHtml(leave.start_date)} → ${escapeHtml(leave.end_date)} · ${escapeHtml(leave.days)}d</span>
+        </div>
+      </div>
+      <span class="permission-status ${leave.status === 'Approved' ? '' : 'pending'}">${escapeHtml(leave.status)}</span>
+    </div>
+  `).join('');
+}
+
+function renderTimekeepingList(timekeeping) {
+  const timekeepingList = document.getElementById('timekeeping-list');
+  if (!timekeepingList || !Array.isArray(timekeeping)) return;
+
+  timekeepingList.innerHTML = timekeeping.slice(0, 4).map(item => `
+    <div class="timekeeping-item">
+      <div class="timekeeping-left">
+        <span class="timekeeping-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 6a6 6 0 1 0 6 6"></path>
+            <path d="M12 2a10 10 0 1 0 10 10"></path>
+            <path d="M12 8h.01"></path>
+          </svg>
+        </span>
+        <div>
+          <span class="timekeeping-title">${escapeHtml(item.employee)}</span>
+          <span class="timekeeping-meta">${escapeHtml(item.date)} · ${escapeHtml(item.check_in)}–${escapeHtml(item.check_out)} · ${Number(item.total_hours).toFixed(1)}h</span>
+        </div>
+      </div>
+      <span class="status-label ${item.status === 'Present' ? '' : 'warning'}">${escapeHtml(item.status)}</span>
+    </div>
+  `).join('');
+}
+
+function renderCapacityList(capacityRows) {
+  const capacityList = document.getElementById('capacity-list');
+  if (!capacityList || !Array.isArray(capacityRows)) return;
+
+  capacityList.innerHTML = capacityRows.slice(0, 4).map(row => `
+    <div class="capacity-item">
+      <div class="capacity-left">
+        <span class="capacity-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M3 12h7l4-7 3 14 2-5h5"></path>
+          </svg>
+        </span>
+        <div>
+          <span class="capacity-title">${escapeHtml(row.name)}</span>
+          <span class="capacity-meta">${escapeHtml(row.department)} · ${escapeHtml(row.role_name)} · ${escapeHtml(row.position)} · ${escapeHtml(row.status)} · ${Number(row.assigned_tasks)} tasks · ${Number(row.pending_leave_days)}d leave</span>
+        </div>
+      </div>
+      <span class="capacity-score">${Number(row.capacity_score)}%</span>
+    </div>
+  `).join('');
+}
+
+function bindWorkflowForms() {
+  const createAccountForm = document.getElementById('create-account-form');
+  if (createAccountForm) {
+    createAccountForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const formData = new FormData(createAccountForm);
+      const payload = {
+        name: formData.get('name'),
+        email: formData.get('email'),
+        password: formData.get('password'),
+        role: formData.get('role')
+      };
+      const message = document.getElementById('account-message');
+      try {
+        const response = await fetch(API_BASE + '/api/accounts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const body = await response.json();
+        if (!response.ok) {
+          throw new Error(body.error || 'Unable to create account');
+        }
+        if (message) message.textContent = 'Account created successfully';
+        createAccountForm.reset();
+      } catch (error) {
+        if (message) message.textContent = error.message;
+      }
+    });
+  }
+
+  const profileForm = document.getElementById('profile-form');
+  if (profileForm) {
+    profileForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const profileEmail = profileForm.querySelector('#profile-email').value.trim();
+      const result = document.getElementById('profile-result');
+      try {
+        const response = await fetch(API_BASE + '/api/me?email=' + encodeURIComponent(profileEmail));
+        const body = await response.json();
+        if (!response.ok || !body.employee) {
+          throw new Error(body.error || 'Employee profile unavailable');
+        }
+        const employee = body.employee;
+        if (result) {
+          result.innerHTML = `
+            <div class="profile-card">
+              <span class="profile-title">${escapeHtml(employee.name)}</span>
+              <span class="profile-meta">${escapeHtml(employee.email)} · ${escapeHtml(employee.department)} · ${escapeHtml(employee.role_name)}</span>
+              <span class="profile-meta">${escapeHtml(employee.position)} · ${escapeHtml(employee.access_level)}</span>
+            </div>
+          `;
+        }
+      } catch (error) {
+        if (result) {
+          result.innerHTML = `<span class="profile-empty">${escapeHtml(error.message)}</span>`;
+        }
+      }
+    });
+  }
+
+  const leaveForm = document.getElementById('leave-form');
+  if (leaveForm) {
+    leaveForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const formData = new FormData(leaveForm);
+      const payload = {
+        employee: formData.get('employee'),
+        department: formData.get('department'),
+        leave_type: formData.get('leave_type'),
+        start_date: formData.get('start_date'),
+        end_date: formData.get('end_date'),
+        days: Number(formData.get('days')),
+        reviewer: formData.get('reviewer')
+      };
+      const message = document.getElementById('leave-message');
+      try {
+        const response = await fetch(API_BASE + '/api/leave-requests/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const body = await response.json();
+        if (!response.ok) {
+          throw new Error(body.error || 'Unable to register leave');
+        }
+        if (message) message.textContent = 'Leave request submitted';
+        leaveForm.reset();
+      } catch (error) {
+        if (message) message.textContent = error.message;
+      }
+    });
+  }
+
+  const taskForm = document.getElementById('task-form');
+  if (taskForm) {
+    taskForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const formData = new FormData(taskForm);
+      const payload = {
+        id: Number(formData.get('id')),
+        title: formData.get('title'),
+        status: formData.get('status'),
+        priority: formData.get('priority'),
+        due_date: formData.get('due_date'),
+        description: formData.get('description'),
+        department: formData.get('department'),
+        assignee: formData.get('assignee'),
+        document_id: formData.get('document_id') ? Number(formData.get('document_id')) : null
+      };
+      const message = document.getElementById('task-message');
+      try {
+        const response = await fetch(API_BASE + '/api/tasks/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const body = await response.json();
+        if (!response.ok) {
+          throw new Error(body.error || 'Unable to update task');
+        }
+        if (message) message.textContent = 'Task updated successfully';
+        taskForm.reset();
+      } catch (error) {
+        if (message) message.textContent = error.message;
+      }
+    });
+  }
+
+  const approveForm = document.getElementById('approve-leave-form');
+  if (approveForm) {
+    approveForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const formData = new FormData(approveForm);
+      const payload = {
+        id: Number(formData.get('id')),
+        status: formData.get('status'),
+        reviewer: formData.get('reviewer')
+      };
+      const message = document.getElementById('approve-leave-message');
+      try {
+        const response = await fetch(API_BASE + '/api/leave-requests/approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const body = await response.json();
+        if (!response.ok) {
+          throw new Error(body.error || 'Unable to approve leave');
+        }
+        if (message) message.textContent = 'Leave updated';
+        approveForm.reset();
+      } catch (error) {
+        if (message) message.textContent = error.message;
+      }
+    });
+  }
+}
+
 if (typeof window !== 'undefined') {
   loadDashboardData();
+  bindWorkflowForms();
 }

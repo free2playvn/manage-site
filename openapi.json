@@ -71,6 +71,95 @@
         "summary": "Return access permission grant records",
         "responses": { "200": { "description": "Permissions" } }
       }
+    },
+    "/api/salaries": {
+      "get": {
+        "summary": "Return employee salary and payroll records",
+        "responses": { "200": { "description": "Salaries" } }
+      }
+    },
+    "/api/benefits": {
+      "get": {
+        "summary": "Return employee benefits and enrollment records",
+        "responses": { "200": { "description": "Benefits" } }
+      }
+    },
+    "/api/leave-requests": {
+      "get": {
+        "summary": "Return employee leave and absences records",
+        "responses": { "200": { "description": "Leave requests" } }
+      }
+    },
+    "/api/timekeeping": {
+      "get": {
+        "summary": "Return employee timekeeping and attendance records",
+        "responses": { "200": { "description": "Timekeeping" } }
+      }
+    },
+    "/api/accounts": {
+      "get": {
+        "summary": "Return created accounts for employees and administrators",
+        "responses": { "200": { "description": "Accounts" } }
+      },
+      "post": {
+        "summary": "Create an employee or admin account",
+        "responses": { "201": { "description": "Account created" } }
+      }
+    },
+    "/api/login": {
+      "post": {
+        "summary": "Authenticate an employee or admin account",
+        "responses": { "200": { "description": "Login response" } }
+      }
+    },
+    "/api/me": {
+      "get": {
+        "summary": "Return the current employee profile by email query",
+        "parameters": [
+          { "name": "email", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Employee profile" } }
+      }
+    },
+    "/api/leave-requests/register": {
+      "post": {
+        "summary": "Register an employee leave request",
+        "responses": { "201": { "description": "Leave registered" } }
+      }
+    },
+    "/api/leave-requests/approve": {
+      "post": {
+        "summary": "Approve or update an employee leave request",
+        "responses": { "200": { "description": "Leave approval response" } }
+      },
+      "patch": {
+        "summary": "Approve or update an employee leave request",
+        "responses": { "200": { "description": "Leave approval response" } }
+      }
+    },
+    "/api/employee-capacity": {
+      "get": {
+        "summary": "Return employee capacity and task/leave load scoring",
+        "responses": { "200": { "description": "Employee capacity rows" } }
+      }
+    },
+    "/api/capacity": {
+      "get": {
+        "summary": "Alias for employee capacity scoring",
+        "responses": { "200": { "description": "Employee capacity rows" } }
+      }
+    },
+    "/api/tasks": {
+      "get": {
+        "summary": "Return task and document update records",
+        "responses": { "200": { "description": "Tasks" } }
+      }
+    },
+    "/api/tasks/update": {
+      "post": {
+        "summary": "Update a task or associated document metadata",
+        "responses": { "200": { "description": "Task updated" } }
+      }
     }
   }
 }

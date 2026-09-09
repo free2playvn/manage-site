@@ -3,6 +3,8 @@ import json
 import os
 import sqlite3
 import urllib.parse
+import hashlib
+import datetime
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse
@@ -13,7 +15,7 @@ DB_FILE = BASE_DIR / "company.db"
 PORT = int(os.environ.get("PORT", "8001"))
 ALLOWED_ORIGIN = os.environ.get("ALLOWED_ORIGIN", "http://127.0.0.1:8000")
 ALLOWED_CORS_ORIGINS = {ALLOWED_ORIGIN, "http://localhost:8000"}
-API_ALLOW_METHODS = "GET, OPTIONS"
+API_ALLOW_METHODS = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
 API_ALLOW_HEADERS = "Content-Type, Authorization, X-Requested-With"
 
 
@@ -128,6 +130,80 @@ def init_db():
                 status TEXT NOT NULL,
                 grant_time TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS salaries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                employee TEXT NOT NULL,
+                department TEXT NOT NULL,
+                job_title TEXT NOT NULL,
+                payroll_cycle TEXT NOT NULL,
+                amount REAL NOT NULL,
+                currency TEXT NOT NULL,
+                last_payroll TEXT NOT NULL,
+                status TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS benefits (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                employee TEXT NOT NULL,
+                benefit_type TEXT NOT NULL,
+                provider TEXT NOT NULL,
+                coverage TEXT NOT NULL,
+                cost REAL NOT NULL,
+                enrollment_date TEXT NOT NULL,
+                status TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS leave_requests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                employee TEXT NOT NULL,
+                department TEXT NOT NULL,
+                leave_type TEXT NOT NULL,
+                start_date TEXT NOT NULL,
+                end_date TEXT NOT NULL,
+                days INTEGER NOT NULL,
+                status TEXT NOT NULL,
+                reviewer TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS timekeeping (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                employee TEXT NOT NULL,
+                department TEXT NOT NULL,
+                date TEXT NOT NULL,
+                check_in TEXT NOT NULL,
+                check_out TEXT NOT NULL,
+                total_hours REAL NOT NULL,
+                status TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS accounts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                email TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                role TEXT NOT NULL,
+                employee_id INTEGER,
+                status TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY(employee_id) REFERENCES employees(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS tasks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                project_id INTEGER,
+                assignee TEXT NOT NULL,
+                department TEXT NOT NULL,
+                status TEXT NOT NULL,
+                priority TEXT NOT NULL,
+                due_date TEXT NOT NULL,
+                document_id INTEGER,
+                description TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY(project_id) REFERENCES projects(id),
+                FOREIGN KEY(document_id) REFERENCES documents(id)
+            );
             """
         )
 
@@ -232,6 +308,76 @@ def init_db():
         conn.executemany(
             "INSERT OR IGNORE INTO permissions(employee, resource_type, resource_name, access_level, granted_by, status, grant_time) VALUES(?,?,?,?,?,?,?)",
             permissions,
+        )
+
+        salaries = [
+            ("Amanda Rivera", "Executive", "Chief Executive", "Monthly", 61000.0, "USD", "2026-09-09", "Paid"),
+            ("Ken Thompson", "Operations", "Operations Director", "Monthly", 46200.0, "USD", "2026-09-09", "Paid"),
+            ("Mina Patel", "Technology", "Platform Lead", "Monthly", 54000.0, "USD", "2026-09-09", "Paid"),
+            ("Sarah Wilson", "Technology", "Security Analyst", "Monthly", 45500.0, "USD", "2026-09-09", "Paid"),
+        ]
+
+        conn.executemany(
+            "INSERT OR IGNORE INTO salaries(employee, department, job_title, payroll_cycle, amount, currency, last_payroll, status) VALUES(?,?,?,?,?,?,?,?)",
+            salaries,
+        )
+
+        benefits = [
+            ("Amanda Rivera", "Health Insurance", "BluePeak Care", "Executive Family Cover", 780.0, "2026-09-01", "Active"),
+            ("Ken Thompson", "Health Insurance", "BluePeak Care", "Operations Care", 640.0, "2026-09-01", "Active"),
+            ("Mina Patel", "Learning Budget", "Company Academy", "Annual Learning", 1200.0, "2026-08-15", "Active"),
+            ("Sarah Wilson", "Wellness Allowance", "CareWell", "Wellness Cover", 360.0, "2026-09-01", "Active"),
+        ]
+
+        conn.executemany(
+            "INSERT OR IGNORE INTO benefits(employee, benefit_type, provider, coverage, cost, enrollment_date, status) VALUES(?,?,?,?,?,?,?)",
+            benefits,
+        )
+
+        leave_requests = [
+            ("Amanda Rivera", "Executive", "Annual Leave", "2026-09-14", "2026-09-16", 3, "Approved", "Olivia Brooks"),
+            ("Ken Thompson", "Operations", "Medical Leave", "2026-09-10", "2026-09-11", 2, "Pending", "Mina Patel"),
+            ("Sarah Wilson", "Technology", "Training Leave", "2026-09-18", "2026-09-19", 2, "Approved", "Mina Patel"),
+            ("Chris Lee", "Technology", "Annual Leave", "2026-09-22", "2026-09-24", 3, "Requested", "Ken Thompson"),
+        ]
+
+        conn.executemany(
+            "INSERT OR IGNORE INTO leave_requests(employee, department, leave_type, start_date, end_date, days, status, reviewer) VALUES(?,?,?,?,?,?,?,?)",
+            leave_requests,
+        )
+
+        timekeeping = [
+            ("Amanda Rivera", "Executive", "2026-09-09", "08:30", "17:30", 8.0, "Present"),
+            ("Ken Thompson", "Operations", "2026-09-09", "07:45", "16:30", 8.0, "Present"),
+            ("Mina Patel", "Technology", "2026-09-09", "09:00", "18:00", 8.5, "Present"),
+            ("Sarah Wilson", "Technology", "2026-09-09", "08:15", "16:45", 7.5, "Late"),
+        ]
+
+        conn.executemany(
+            "INSERT OR IGNORE INTO timekeeping(employee, department, date, check_in, check_out, total_hours, status) VALUES(?,?,?,?,?,?,?)",
+            timekeeping,
+        )
+
+        accounts = [
+            ("Rina Bennett", "admin@companyhub.com", hashlib.sha256(b"admin123").hexdigest(), "admin", 1, "Active", "2026-09-09T00:00:00Z"),
+            ("Amanda Rivera", "amanda.r@companyhub.com", hashlib.sha256(b"employee123").hexdigest(), "employee", 1, "Active", "2026-09-09T00:00:00Z"),
+            ("Mina Patel", "mina.p@companyhub.com", hashlib.sha256(b"employee123").hexdigest(), "employee", 3, "Active", "2026-09-09T00:00:00Z"),
+        ]
+
+        conn.executemany(
+            "INSERT OR IGNORE INTO accounts(name, email, password_hash, role, employee_id, status, created_at) VALUES(?,?,?,?,?,?,?)",
+            accounts,
+        )
+
+        tasks = [
+            ("Security Policy Review", 1, "Sarah Wilson", "Technology", "In Progress", "High", "2026-09-12", 1, "Review policy and access rule refresh.", "2026-09-09T00:00:00Z"),
+            ("Operations Budget Table", 3, "Ken Thompson", "Operations", "Open", "Medium", "2026-09-13", 4, "Update approved field operations budget issue.", "2026-09-09T00:00:00Z"),
+            ("Finance Document Signoff", 4, "Olivia Brooks", "Finance", "Pending", "High", "2026-09-14", 3, "Review budget documentation and approval flow.", "2026-09-09T00:00:00Z"),
+        ]
+
+        conn.executemany(
+            "INSERT OR IGNORE INTO tasks(title, project_id, assignee, department, status, priority, due_date, document_id, description, updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
+            tasks,
         )
 
         conn.commit()
@@ -377,6 +523,300 @@ def api_permissions():
         conn.close()
 
 
+def api_salaries():
+    conn = connect_db()
+    try:
+        rows = conn.execute("SELECT id, employee, department, job_title, payroll_cycle, amount, currency, last_payroll, status FROM salaries ORDER BY id ASC").fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        conn.close()
+
+
+def api_benefits():
+    conn = connect_db()
+    try:
+        rows = conn.execute("SELECT id, employee, benefit_type, provider, coverage, cost, enrollment_date, status FROM benefits ORDER BY id ASC").fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        conn.close()
+
+
+def api_leave_requests():
+    conn = connect_db()
+    try:
+        rows = conn.execute("SELECT id, employee, department, leave_type, start_date, end_date, days, status, reviewer FROM leave_requests ORDER BY id ASC").fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        conn.close()
+
+
+def api_timekeeping():
+    conn = connect_db()
+    try:
+        rows = conn.execute("SELECT id, employee, department, date, check_in, check_out, total_hours, status FROM timekeeping ORDER BY id ASC").fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        conn.close()
+
+
+def api_tasks():
+    conn = connect_db()
+    try:
+        rows = conn.execute("SELECT id, title, project_id, assignee, department, status, priority, due_date, document_id, description, updated_at FROM tasks ORDER BY id ASC").fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        conn.close()
+
+
+def api_accounts():
+    conn = connect_db()
+    try:
+        rows = conn.execute("SELECT id, name, email, role, employee_id, status, created_at FROM accounts ORDER BY id ASC").fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        conn.close()
+
+
+def hash_password(password):
+    return hashlib.sha256(password.encode('utf-8')).hexdigest()
+
+
+def api_login(handler):
+    try:
+        content_length = int(handler.headers.get('Content-Length', '0'))
+        payload = json.loads(handler.rfile.read(content_length)) if content_length else {}
+    except Exception:
+        payload = {}
+
+    email = str(payload.get('email', '')).strip().lower()
+    password = str(payload.get('password', ''))
+    if not email or not password:
+        api_json(handler, {'error': 'email and password required'}, status=400)
+        return
+
+    conn = connect_db()
+    try:
+        row = conn.execute("SELECT id, name, email, role, employee_id, status FROM accounts WHERE email = ? AND password_hash = ?", (email, hash_password(password))).fetchone()
+        if not row:
+            api_json(handler, {'error': 'invalid credentials'}, status=401)
+            return
+        employee = dict(row)
+        api_json(handler, {'message': 'login_ok', 'account': employee})
+    except Exception as exc:
+        api_json(handler, {'error': str(exc)}, status=500)
+    finally:
+        conn.close()
+
+
+def api_create_account(handler):
+    try:
+        content_length = int(handler.headers.get('Content-Length', '0'))
+        payload = json.loads(handler.rfile.read(content_length)) if content_length else {}
+    except Exception:
+        payload = {}
+
+    required = ['name', 'email', 'password', 'role']
+    if any(k not in payload for k in required):
+        api_json(handler, {'error': 'name, email, password, role required'}, status=400)
+        return
+
+    name = str(payload['name']).strip()
+    email = str(payload['email']).strip().lower()
+    password = str(payload['password'])
+    role = str(payload['role']).strip().lower()
+    status = str(payload.get('status', 'Active'))
+    employee_id = payload.get('employee_id')
+    if not name or not email or not password or not role:
+        api_json(handler, {'error': 'invalid account payload'}, status=400)
+        return
+
+    conn = connect_db()
+    try:
+        existing = conn.execute("SELECT 1 FROM accounts WHERE email = ?", (email,)).fetchone()
+        if existing:
+            api_json(handler, {'error': 'email already used'}, status=409)
+            return
+
+        now = datetime.datetime.utcnow().replace(microsecond=0).isoformat() + 'Z'
+        cur = conn.execute("INSERT INTO accounts(name, email, password_hash, role, employee_id, status, created_at) VALUES(?,?,?,?,?,?,?)",
+            (name, email, hash_password(password), role, employee_id, status, now))
+        new_id = cur.lastrowid
+        row = conn.execute("SELECT id, name, email, role, employee_id, status, created_at FROM accounts WHERE id = ?", (new_id,)).fetchone()
+        api_json(handler, {'message': 'account_created', 'account': dict(row)})
+        conn.commit()
+    except Exception as exc:
+        api_json(handler, {'error': str(exc)}, status=500)
+    finally:
+        conn.close()
+
+
+def api_employee_profile(handler):
+    try:
+        parsed = urlparse(handler.path)
+        q = urllib.parse.parse_qs(parsed.query)
+        email = q.get('email', [None])[0]
+        if not email:
+            api_json(handler, {'error': 'email query required'}, status=400)
+            return
+        conn = connect_db()
+        try:
+            row = conn.execute("SELECT e.id, e.name, e.email, e.position, e.department_id, e.role_id, e.team, e.status, e.access_level, e.avatar, d.name AS department, r.name AS role_name FROM employees e JOIN departments d ON d.id=e.department_id JOIN roles r ON r.id=e.role_id WHERE e.email = ?", (email.lower(),)).fetchone()
+            if not row:
+                api_json(handler, {'error': 'employee not found'}, status=404)
+                return
+            api_json(handler, {'employee': dict(row)})
+        finally:
+            conn.close()
+    except Exception as exc:
+        api_json(handler, {'error': str(exc)}, status=500)
+
+
+def api_register_leave(handler):
+    try:
+        content_length = int(handler.headers.get('Content-Length', '0'))
+        payload = json.loads(handler.rfile.read(content_length)) if content_length else {}
+    except Exception:
+        payload = {}
+
+    required = ['employee', 'department', 'leave_type', 'start_date', 'end_date', 'days', 'reviewer']
+    if any(k not in payload for k in required):
+        api_json(handler, {'error': 'leave fields required'}, status=400)
+        return
+
+    try:
+        conn = connect_db()
+        conn.execute("INSERT INTO leave_requests(employee, department, leave_type, start_date, end_date, days, status, reviewer) VALUES(?,?,?,?,?,?,?,?)",
+            (payload['employee'], payload['department'], payload['leave_type'], payload['start_date'], payload['end_date'], int(payload['days']), 'Requested', payload['reviewer']))
+        conn.commit()
+        api_json(handler, {'message': 'leave_registered', 'leave_request': {'employee': payload['employee'], 'status': 'Requested'}})
+    except Exception as exc:
+        api_json(handler, {'error': str(exc)}, status=500)
+    finally:
+        conn.close()
+
+
+def api_update_document_task(handler):
+    try:
+        content_length = int(handler.headers.get('Content-Length', '0'))
+        payload = json.loads(handler.rfile.read(content_length)) if content_length else {}
+    except Exception:
+        payload = {}
+
+    task_id = payload.get('id')
+    if not task_id:
+        api_json(handler, {'error': 'task id required'}, status=400)
+        return
+
+    fields = []
+    allowed = ['title', 'status', 'priority', 'due_date', 'description', 'document_id', 'department', 'assignee']
+    for key in allowed:
+        if key in payload:
+            fields.append(f"{key} = ?")
+
+    if not fields:
+        api_json(handler, {'error': 'no update fields'}, status=400)
+        return
+
+    values = [payload[key] for key in allowed if key in payload]
+    values.append(task_id)
+    conn = connect_db()
+    try:
+        query = "UPDATE tasks SET " + ", ".join(fields) + ", updated_at = ? WHERE id = ?"
+        values.append(datetime.datetime.utcnow().replace(microsecond=0).isoformat() + 'Z')
+        values = values[:-1] + [values[-1]] if False else values
+        # values list is task_id field last in insert order; build in one pass
+        query_values = []
+        for key in allowed:
+            if key in payload:
+                query_values.append(payload[key])
+        query_values.append(datetime.datetime.utcnow().replace(microsecond=0).isoformat() + 'Z')
+        query_values.append(task_id)
+        conn.execute(query, query_values)
+        conn.commit()
+        api_json(handler, {'message': 'task_updated', 'id': task_id})
+    except Exception as exc:
+        api_json(handler, {'error': str(exc)}, status=500)
+    finally:
+        conn.close()
+
+
+def api_approve_leave_request(handler):
+    try:
+        content_length = int(handler.headers.get('Content-Length', '0'))
+        payload = json.loads(handler.rfile.read(content_length)) if content_length else {}
+    except Exception:
+        payload = {}
+
+    leave_id = payload.get('id') or payload.get('leave_id')
+    if not leave_id:
+        api_json(handler, {'error': 'leave id required'}, status=400)
+        return
+
+    status = str(payload.get('status', 'Approved')).strip().title()
+    reviewer = str(payload.get('reviewer', 'Admin')).strip() or 'Admin'
+
+    conn = connect_db()
+    try:
+        existing = conn.execute("SELECT id FROM leave_requests WHERE id = ?", (leave_id,)).fetchone()
+        if not existing:
+            api_json(handler, {'error': 'leave request not found'}, status=404)
+            return
+
+        conn.execute("UPDATE leave_requests SET status = ?, reviewer = ? WHERE id = ?", (status, reviewer, leave_id))
+        conn.commit()
+        row = conn.execute("SELECT id, employee, department, leave_type, start_date, end_date, days, status, reviewer FROM leave_requests WHERE id = ?", (leave_id,)).fetchone()
+        api_json(handler, {'message': 'leave_approved', 'leave_request': dict(row)})
+    except Exception as exc:
+        api_json(handler, {'error': str(exc)}, status=500)
+    finally:
+        conn.close()
+
+
+def api_employee_capacity():
+    conn = connect_db()
+    try:
+        employees = conn.execute(
+            """
+            SELECT e.id, e.name, e.email, e.position, e.team, e.status, e.access_level, e.avatar,
+                   d.name AS department, r.name AS role_name
+            FROM employees e
+            JOIN departments d ON d.id = e.department_id
+            JOIN roles r ON r.id = e.role_id
+            ORDER BY e.id ASC
+            """
+        ).fetchall()
+
+        capacity_rows = []
+        for row in employees:
+            employee = dict(row)
+            assignee_name = employee['name']
+            assigned_tasks = conn.execute("SELECT COUNT(*) AS c FROM tasks WHERE assignee = ? AND status <> 'Completed'", (assignee_name,)).fetchone()['c']
+            pending_leave_days = conn.execute("SELECT COALESCE(SUM(days), 0) AS c FROM leave_requests WHERE employee = ? AND status IN ('Requested','Pending','Approved')", (assignee_name,)).fetchone()['c']
+            away_penalty = 18 if employee['status'] == 'Away' else 0
+            leave_penalty = int(pending_leave_days) * 10
+            task_penalty = max(0, int(assigned_tasks) - 2) * 7
+            capacity = max(15, min(100, int(100 - away_penalty - leave_penalty - task_penalty)))
+            capacity_rows.append({
+                'id': employee['id'],
+                'name': employee['name'],
+                'email': employee['email'],
+                'position': employee['position'],
+                'team': employee['team'],
+                'status': employee['status'],
+                'access_level': employee['access_level'],
+                'department': employee['department'],
+                'role_name': employee['role_name'],
+                'available_hours': max(2, int(capacity / 100 * 8)),
+                'capacity_score': capacity,
+                'assigned_tasks': int(assigned_tasks),
+                'pending_leave_days': int(pending_leave_days),
+            })
+
+        return capacity_rows
+    finally:
+        conn.close()
+
+
 class CompanyHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, directory=None, **kwargs):
         super().__init__(*args, directory=str(BASE_DIR), **kwargs)
@@ -392,12 +832,46 @@ class CompanyHandler(SimpleHTTPRequestHandler):
         self.send_header("X-Content-Type-Options", "nosniff")
         self.end_headers()
 
+    def do_POST(self):
+        parsed = urlparse(self.path)
+        path = parsed.path
+        if path == '/api/login':
+            api_login(self)
+            return
+        if path == '/api/accounts':
+            api_create_account(self)
+            return
+        if path == '/api/leave-requests/register':
+            api_register_leave(self)
+            return
+        if path == '/api/leave-requests/approve':
+            api_approve_leave_request(self)
+            return
+        if path == '/api/tasks/update':
+            api_update_document_task(self)
+            return
+        api_json(self, {'error': 'Endpoint not found'}, status=404)
+
+    def do_PATCH(self):
+        parsed = urlparse(self.path)
+        path = parsed.path
+        if path == '/api/leave-requests/approve':
+            api_approve_leave_request(self)
+            return
+        api_json(self, {'error': 'Endpoint not found'}, status=404)
+
     def do_GET(self):
         path = urlparse(self.path).path
         if path == '/openapi.json':
             self.serve_docs()
             return
         if path.startswith('/api/'):
+            if path == '/api/me':
+                api_employee_profile(self)
+                return
+            if path.startswith('/api/profile'):
+                api_employee_profile(self)
+                return
             self.handle_api(path)
             return
 
@@ -458,6 +932,11 @@ class CompanyHandler(SimpleHTTPRequestHandler):
                     "projects": api_projects(),
                     "documents": api_documents(),
                     "permissions": api_permissions(),
+                    "salaries": api_salaries(),
+                    "benefits": api_benefits(),
+                    "leave_requests": api_leave_requests(),
+                    "timekeeping": api_timekeeping(),
+                    "employee_capacity": api_employee_capacity(),
                 }
                 api_json(self, payload)
             elif path == '/api/stats':
@@ -480,6 +959,22 @@ class CompanyHandler(SimpleHTTPRequestHandler):
                 api_json(self, api_documents())
             elif path == '/api/permissions':
                 api_json(self, api_permissions())
+            elif path == '/api/salaries':
+                api_json(self, api_salaries())
+            elif path == '/api/benefits':
+                api_json(self, api_benefits())
+            elif path == '/api/leave-requests':
+                api_json(self, api_leave_requests())
+            elif path == '/api/timekeeping':
+                api_json(self, api_timekeeping())
+            elif path == '/api/employee-capacity':
+                api_json(self, api_employee_capacity())
+            elif path == '/api/capacity':
+                api_json(self, api_employee_capacity())
+            elif path == '/api/accounts':
+                api_json(self, api_accounts())
+            elif path == '/api/tasks':
+                api_json(self, api_tasks())
             else:
                 api_json(self, {"error": "Endpoint not found"}, status=404)
         except Exception as exc:

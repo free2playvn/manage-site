@@ -8,6 +8,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 BASE_DIR = Path(__file__).resolve().parent
+API_DOC_FILE = BASE_DIR / 'openapi.json'
 DB_FILE = BASE_DIR / "company.db"
 PORT = int(os.environ.get("PORT", "8001"))
 ALLOWED_ORIGIN = os.environ.get("ALLOWED_ORIGIN", "http://127.0.0.1:8000")
@@ -393,6 +394,9 @@ class CompanyHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         path = urlparse(self.path).path
+        if path == '/openapi.json':
+            self.serve_docs()
+            return
         if path.startswith('/api/'):
             self.handle_api(path)
             return
@@ -424,6 +428,22 @@ class CompanyHandler(SimpleHTTPRequestHandler):
             self.wfile.write(data)
         except Exception as exc:
             self.send_error(500, str(exc))
+
+    def serve_docs(self):
+        if not API_DOC_FILE.exists():
+            self.send_error(404, 'OpenAPI document not found')
+            return
+        data = API_DOC_FILE.read_bytes()
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.send_header('Content-Length', str(len(data)))
+        self.send_header('Cache-Control', 'no-store')
+        self.send_header('Access-Control-Allow-Origin', get_origin(self))
+        self.send_header('Access-Control-Allow-Methods', API_ALLOW_METHODS)
+        self.send_header('Access-Control-Allow-Headers', API_ALLOW_HEADERS)
+        self.send_header('X-Content-Type-Options', 'nosniff')
+        self.end_headers()
+        self.wfile.write(data)
 
     def handle_api(self, path):
         try:

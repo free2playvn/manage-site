@@ -1,0 +1,76 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Manage Site Company Dashboard API",
+    "version": "1.0.0",
+    "description": "Company dashboard APIs for departments, employees, roles, activities, devices, projects, documents, and permissions."
+  },
+  "servers": [
+    { "url": "http://127.0.0.1:8001" }
+  ],
+  "paths": {
+    "/api/overview": {
+      "get": {
+        "summary": "Return the complete dashboard overview payload",
+        "responses": { "200": { "description": "Dashboard overview" } }
+      }
+    },
+    "/api/stats": {
+      "get": {
+        "summary": "Return company statistic summary",
+        "responses": { "200": { "description": "Statistics" } }
+      }
+    },
+    "/api/departments": {
+      "get": {
+        "summary": "Return departments",
+        "responses": { "200": { "description": "Departments" } }
+      }
+    },
+    "/api/roles": {
+      "get": {
+        "summary": "Return roles",
+        "responses": { "200": { "description": "Roles" } }
+      }
+    },
+    "/api/employees": {
+      "get": {
+        "summary": "Return employees, optionally filtered by role query",
+        "parameters": [
+          { "name": "role", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Employees" } }
+      }
+    },
+    "/api/activity": {
+      "get": {
+        "summary": "Return recent activity entries",
+        "responses": { "200": { "description": "Activity feed" } }
+      }
+    },
+    "/api/devices": {
+      "get": {
+        "summary": "Return device inventory records",
+        "responses": { "200": { "description": "Devices" } }
+      }
+    },
+    "/api/projects": {
+      "get": {
+        "summary": "Return project management records",
+        "responses": { "200": { "description": "Projects" } }
+      }
+    },
+    "/api/documents": {
+      "get": {
+        "summary": "Return document and file access records",
+        "responses": { "200": { "description": "Documents" } }
+      }
+    },
+    "/api/permissions": {
+      "get": {
+        "summary": "Return access permission grant records",
+        "responses": { "200": { "description": "Permissions" } }
+      }
+    }
+  }
+}

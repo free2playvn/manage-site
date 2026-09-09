@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Manage Site API Swagger</title>
+  <style>
+    :root {
+      --bg: #eef3f7;
+      --panel: #ffffff;
+      --text: #172136;
+      --muted: #516073;
+      --line: #dce5ee;
+      --primary: #3b82f6;
+      --primary-dark: #1856ce;
+      --shadow: rgba(20, 30, 58, 0.08);
+      --font: "Inter", "Segoe UI", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font);
+      color: var(--text);
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 16px;
+    }
+    .swagger-shell {
+      width: min(1100px, 100%);
+      background: var(--panel);
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      box-shadow: 0 20px 70px var(--shadow);
+      padding: 30px;
+    }
+    .swagger-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 20px;
+      margin-bottom: 24px;
+    }
+    .swagger-title h1 {
+      font-size: clamp(30px, 4vw, 40px);
+      margin: 0 0 10px;
+      color: var(--text);
+    }
+    .swagger-title p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .swagger-card {
+      background: #f8fafc;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      padding: 16px;
+      margin-top: 16px;
+    }
+    .swagger-card pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .swagger-button {
+      text-decoration: none;
+      color: var(--panel);
+      background: var(--primary);
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-weight: 700;
+      transition: 260ms ease all;
+    }
+    .swagger-button:hover {
+      background: var(--primary-dark);
+    }
+  </style>
+</head>
+<body>
+  <section class="swagger-shell">
+    <div class="swagger-title">
+      <div>
+        <h1>Manage Site API</h1>
+        <p>OpenAPI static documentation for company dashboard endpoints</p>
+      </div>
+      <a class="swagger-button" href="openapi.json">Download OpenAPI</a>
+    </div>
+    <div class="swagger-card">
+      <pre>{
+  "openapi": "3.0.3",
+  "info": { "title": "Manage Site Company Dashboard API", "version": "1.0.0" },
+  "paths": {
+    "/api/overview": "GET",
+    "/api/devices": "GET",
+    "/api/projects": "GET",
+    "/api/documents": "GET",
+    "/api/permissions": "GET"
+  }
+}</pre>
+    </div>
+  </section>
+</body>
+</html>

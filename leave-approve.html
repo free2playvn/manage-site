@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CompanyHub | Approve Leave</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-backdrop" id="appBackdrop" aria-hidden="true"></div>
+  <div class="app-shell">
+
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <a class="brand" href="index.html">
+          <span class="brand-mark">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3L2 12h3l7-7 7 7h3L12 3z"></path>
+              <path d="M5 13h14v8H5z"></path>
+            </svg>
+          </span>
+          <span class="brand-text">CompanyHub</span>
+        </a>
+        <button class="icon-button sidebar-close mobile-hidden" id="closeSidebar" aria-label="Close sidebar">
+          <svg viewBox="0 0 24 24">
+            <path d="M6 6l12 12M18 6L6 18"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="account-card">
+        <div class="account-avatar">RB</div>
+        <div class="account-meta">
+          <span class="account-label">Enterprise Admin</span>
+          <span class="account-name">Rina Bennett</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <span class="side-label">Workspace</span>
+        <nav class="nav">
+          <a class="nav-link" href="index.html">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24"><path d="M4 13h7l3-7 3 14 2-7h4"></path></svg>
+            </span>
+            <span>Overview</span>
+            <span class="nav-arrow">›</span>
+          </a>
+          <a class="nav-link" href="departments.html">
+            <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4 7h16v6H4z"></path><path d="M4 15h16v6H4z"></path></svg></span>
+            <span>Departments</span>
+            <span class="nav-arrow">›</span>
+          </a>
+          <a class="nav-link" href="employees.html">
+            <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M16 8a4 4 0 1 0-8 0 4 4 0 0 0 8 0z"></path><path d="M3 20a7 7 0 0 1 14 0"></path></svg></span>
+            <span>People</span>
+            <span class="nav-arrow">›</span>
+          </a>
+          <a class="nav-link" href="roles.html">
+            <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4 18L10 12l4 4 6-8"></path><path d="M4 5h16v18H4z"></path></svg></span>
+            <span>Roles & Access</span>
+            <span class="nav-arrow">›</span>
+          </a>
+          <a class="nav-link" href="projects.html">
+            <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 12h7l4-7 4 14 3-7h4"></path></svg></span>
+            <span>Projects</span>
+            <span class="nav-arrow">›</span>
+          </a>
+          <a class="nav-link" href="documents.html">
+            <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4 4h11l5 5v15H4z"></path><path d="M14 4v6h6"></path></svg></span>
+            <span>Documents</span>
+            <span class="nav-arrow">›</span>
+          </a>
+          <a class="nav-link" href="permissions.html">
+            <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M7 11V7a5 5 0 0 1 10 0v4"></path><path d="M5 11h14v10H5z"></path></svg></span>
+            <span>Permissions</span>
+            <span class="nav-arrow">›</span>
+          </a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <span class="side-label">Company Structure</span>
+        <div class="structure-card">
+          <div class="structure-top">
+            <div>
+              <span class="structure-title">Global Operations</span>
+              <span class="structure-subtitle">24 Teams</span>
+            </div>
+            <span class="structure-badge">Live</span>
+          </div>
+          <div class="structure-map">
+            <div class="structure-line"></div>
+            <div class="structure-node"><span class="node-dot"></span><span class="node-label">Executive</span></div>
+            <div class="structure-node"><span class="node-dot"></span><span class="node-label">Operations</span></div>
+            <div class="structure-node"><span class="node-dot"></span><span class="node-label">Technology</span></div>
+            <div class="structure-node"><span class="node-dot"></span><span class="node-label">Commercial</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="button button-dark">
+          <span class="button-icon"><svg viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="M13 3l9 9-9 9"></path></svg></span>
+          <span>Sync Directory</span>
+        </button>
+      </div>
+    </aside>
+<main class="main-content">
+      <section class="topbar">
+        <div class="topbar-left">
+          <button class="icon-button mobile-only" id="menuToggle" aria-label="Open menu">
+            <svg viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M4 12h16"></path><path d="M4 17h16"></path></svg>
+          </button>
+          <div class="crumbs">
+            <span class="crumb-home">Workspace</span>
+            <span class="crumb-divider">/</span>
+            <span class="crumb-current">Company Administration</span>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <div class="search-wrap">
+            <svg viewBox="0 0 24 24" class="search-icon"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"></path><path d="m21 21-4.2-4.2"></path></svg>
+            <input type="search" id="search" placeholder="Search people or roles" />
+          </div>
+          <button class="icon-button notification">
+            <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7.5 0 10h12c3-2.5 0-3 0-10z"></path><path d="M10 21h4"></path></svg>
+            <span class="notification-dot"></span>
+          </button>
+          <button class="button button-primary">
+            <span class="button-icon"><svg viewBox="0 0 24 24"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg></span>
+            <span>Create Team</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="page-heading">
+        <div>
+          <span class="section-kicker">Organization Dashboard</span>
+          <h1>Approve Leave</h1>
+        </div>
+        <div class="heading-actions">
+          <div class="date-card">
+            <span class="date-label">Today</span>
+            <span class="date-value" id="todayDate">September 09, 2026</span>
+          </div>
+          <button class="button button-soft">
+            <span class="button-icon"><svg viewBox="0 0 24 24"><path d="M3 12h18"></path><path d="M12 3l9 9-9 9"></path></svg></span>
+            <span>Export Report</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="feature-page">
+        <section class="panel workflow-panel resource-panel">
+          <div class="panel-head compact">
+            <div>
+              <span class="panel-kicker">Leave Approver</span>
+              <h2>Approve On-Leave</h2>
+            </div>
+            <button class="button button-chip">Review</button>
+          </div>
+          <form class="workflow-form" id="approve-leave-form">
+            <div class="form-field">
+              <label for="approve-leave-id">Leave Request ID</label>
+              <input type="number" id="approve-leave-id" name="id" placeholder="1" required />
+            </div>
+            <div class="form-field">
+              <label for="approve-leave-status">Decision</label>
+              <select id="approve-leave-status" name="status">
+                <option value="Approved">Approve</option>
+                <option value="Rejected">Reject</option>
+                <option value="Pending">Pending</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="approve-leave-reviewer">Reviewer</label>
+              <input type="text" id="approve-leave-reviewer" name="reviewer" placeholder="Admin" required />
+            </div>
+            <button class="button button-primary form-button" type="submit">Submit Decision</button>
+            <div class="form-message" id="approve-leave-message"></div>
+          </form>
+        </section>
+      </section>
+
+  </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

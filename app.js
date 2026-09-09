@@ -7,16 +7,33 @@ function escapeHtml(value) {
 const menuToggle = document.getElementById('menuToggle');
 const closeSidebar = document.getElementById('closeSidebar');
 const sidebar = document.getElementById('sidebar');
+const appBackdrop = document.getElementById('appBackdrop');
+
+function setSidebar(open) {
+  if (!sidebar) return;
+  sidebar.classList.toggle('open', open);
+  if (appBackdrop) {
+    appBackdrop.classList.toggle('open', open);
+    appBackdrop.setAttribute('aria-hidden', String(!open));
+  }
+}
 
 if (menuToggle && sidebar) {
   menuToggle.addEventListener('click', () => {
-    sidebar.classList.toggle('open');
+    const opening = !sidebar.classList.contains('open');
+    setSidebar(opening);
   });
 }
 
 if (closeSidebar && sidebar) {
   closeSidebar.addEventListener('click', () => {
-    sidebar.classList.remove('open');
+    setSidebar(false);
+  });
+}
+
+if (appBackdrop && sidebar) {
+  appBackdrop.addEventListener('click', () => {
+    setSidebar(false);
   });
 }
 

@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CompanyHub | Organization Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <a class="brand" href="#">
+          <span class="brand-mark">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3L2 12h3l7-7 7 7h3L12 3z"></path>
+              <path d="M5 13h14v8H5z"></path>
+            </svg>
+          </span>
+          <span class="brand-text">CompanyHub</span>
+        </a>
+        <button class="icon-button sidebar-close mobile-hidden" id="closeSidebar" aria-label="Close sidebar">
+          <svg viewBox="0 0 24 24">
+            <path d="M6 6l12 12M18 6L6 18"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="account-card">
+        <div class="account-avatar">RB</div>
+        <div class="account-meta">
+          <span class="account-label">Enterprise Admin</span>
+          <span class="account-name">Rina Bennett</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <span class="side-label">Workspace</span>
+        <nav class="nav">
+          <a class="nav-link active" href="#">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 13h7l3-7 3 14 2-7h4"></path>
+              </svg>
+            </span>
+            <span>Overview</span>
+            <span class="nav-arrow">›</span>
+          </a>
+          <a class="nav-link" href="#">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 7h16v6H4z"></path>
+                <path d="M4 15h16v6H4z"></path>
+              </svg>
+            </span>
+            <span>Departments</span>
+            <span class="nav-arrow">›</span>
+          </a>
+          <a class="nav-link" href="#">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M16 8a4 4 0 1 0-8 0 4 4 0 0 0 8 0z"></path>
+                <path d="M3 20a7 7 0 0 1 14 0"></path>
+                <path d="M19 6h4v4"></path>
+              </svg>
+            </span>
+            <span>People</span>
+            <span class="nav-arrow">›</span>
+          </a>
+          <a class="nav-link" href="#">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 18L10 12l4 4 6-8"></path>
+                <path d="M4 5h16v18H4z"></path>
+              </svg>
+            </span>
+            <span>Performance</span>
+            <span class="nav-arrow">›</span>
+          </a>
+          <a class="nav-link" href="#">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 20h16"></path>
+                <path d="M7 4h10v4H7z"></path>
+                <path d="M7 11h10v4H7z"></path>
+              </svg>
+            </span>
+            <span>Roles & Access</span>
+            <span class="nav-arrow">›</span>
+          </a>
+          <a class="nav-link" href="#">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 6h16v12H4z"></path>
+                <path d="M4 20h16"></path>
+              </svg>
+            </span>
+            <span>Reports</span>
+            <span class="nav-arrow">›</span>
+          </a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <span class="side-label">Company Structure</span>
+        <div class="structure-card">
+          <div class="structure-top">
+            <div>
+              <span class="structure-title">Global Operations</span>
+              <span class="structure-subtitle">24 Teams</span>
+            </div>
+            <span class="structure-badge">Live</span>
+          </div>
+          <div class="structure-map">
+            <div class="structure-line"></div>
+            <div class="structure-node">
+              <span class="node-dot"></span>
+              <span class="node-label">Executive</span>
+            </div>
+            <div class="structure-node">
+              <span class="node-dot"></span>
+              <span class="node-label">Operations</span>
+            </div>
+            <div class="structure-node">
+              <span class="node-dot"></span>
+              <span class="node-label">Technology</span>
+            </div>
+            <div class="structure-node">
+              <span class="node-dot"></span>
+              <span class="node-label">Commercial</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="button button-dark">
+          <span class="button-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M5 12h14"></path>
+              <path d="M13 3l9 9-9 9"></path>
+            </svg>
+          </span>
+          <span>Sync Directory</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <section class="topbar">
+        <div class="topbar-left">
+          <button class="icon-button mobile-only" id="menuToggle" aria-label="Open menu">
+            <svg viewBox="0 0 24 24">
+              <path d="M4 7h16"></path>
+              <path d="M4 12h16"></path>
+              <path d="M4 17h16"></path>
+            </svg>
+          </button>
+          <div class="crumbs">
+            <span class="crumb-home">Workspace</span>
+            <span class="crumb-divider">/</span>
+            <span class="crumb-current">Company Administration</span>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <div class="search-wrap">
+            <svg viewBox="0 0 24 24" class="search-icon">
+              <path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"></path>
+              <path d="m21 21-4.2-4.2"></path>
+            </svg>
+            <input type="search" id="search" placeholder="Search people or roles" />
+          </div>
+          <button class="icon-button notification">
+            <svg viewBox="0 0 24 24">
+              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7.5 0 10h12c3-2.5 0-3 0-10z"></path>
+              <path d="M10 21h4"></path>
+            </svg>
+            <span class="notification-dot"></span>
+          </button>
+          <button class="button button-primary">
+            <span class="button-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 5v14"></path>
+                <path d="M5 12h14"></path>
+              </svg>
+            </span>
+            <span>Create Team</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="page-heading">
+        <div>
+          <span class="section-kicker">Organization Dashboard</span>
+          <h1>Company Management</h1>
+        </div>
+        <div class="heading-actions">
+          <div class="date-card">
+            <span class="date-label">Today</span>
+            <span class="date-value" id="todayDate">September 09, 2026</span>
+          </div>
+          <button class="button button-soft">
+            <span class="button-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M3 12h18"></path>
+                <path d="M12 3l9 9-9 9"></path>
+              </svg>
+            </span>
+            <span>Export Report</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="stats-grid">
+        <article class="stat-card">
+          <div class="stat-card-head">
+            <span class="stat-title">Total Users</span>
+            <span class="stat-icon success">
+              <svg viewBox="0 0 24 24">
+                <path d="M16 11a4 4 0 1 0-8 0 4 4 0 0 0 8 0z"></path>
+                <path d="M3 20a7 7 0 0 1 14 0"></path>
+                <path d="M16 11h5l3 3"></path>
+              </svg>
+            </span>
+          </div>
+          <div class="stat-number">286</div>
+          <div class="stat-meta">
+            <span class="trend up">+12.4%</span>
+            <span class="stat-label">vs last month</span>
+          </div>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-card-head">
+            <span class="stat-title">Departments</span>
+            <span class="stat-icon primary">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 7h7v7H4z"></path>
+                <path d="M13 7h7v7h-7z"></path>
+                <path d="M4 16h7v7H4z"></path>
+                <path d="M13 16h7v7h-7z"></path>
+              </svg>
+            </span>
+          </div>
+          <div class="stat-number">09</div>
+          <div class="stat-meta">
+            <span class="trend up">+02</span>
+            <span class="stat-label">active zones</span>
+          </div>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-card-head">
+            <span class="stat-title">Team Managers</span>
+            <span class="stat-icon warning">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 3a8 8 0 0 0-8 8v2l2 4h12l2-4V11a8 8 0 0 0-8-8z"></path>
+                <path d="M9 21h6"></path>
+              </svg>
+            </span>
+          </div>
+          <div class="stat-number">34</div>
+          <div class="stat-meta">
+            <span class="trend up">+03</span>
+            <span class="stat-label">new leaders</span>
+          </div>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-card-head">
+            <span class="stat-title">Access Level</span>
+            <span class="stat-icon blue">
+              <svg viewBox="0 0 24 24">
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                <path d="M5 11h14v10H5z"></path>
+                <path d="M12 15h.01"></path>
+              </svg>
+            </span>
+          </div>
+          <div class="stat-number">76%</div>
+          <div class="stat-meta">
+            <span class="trend stable">Balanced</span>
+            <span class="stat-label">permission map</span>
+          </div>
+        </article>
+      </section>
+
+      <section class="dashboard-grid">
+        <section class="panel panel-large">
+          <div class="panel-head">
+            <div>
+              <span class="panel-kicker">Workforce Distribution</span>
+              <h2>Department Allocation</h2>
+            </div>
+            <div class="panel-actions">
+              <button class="icon-button small">
+                <svg viewBox="0 0 24 24">
+                  <path d="M3 12h18M12 3l9 9-9 9"></path>
+                </svg>
+              </button>
+              <button class="button button-chip">Q3 2026</button>
+            </div>
+          </div>
+
+          <div class="bar-chart">
+            <div class="chart-row">
+              <span class="chart-label">Executive</span>
+              <div class="chart-track"><span class="chart-bar bar-executive" style="width: 86%;"></span></div>
+              <span class="chart-value">26</span>
+            </div>
+            <div class="chart-row">
+              <span class="chart-label">Operations</span>
+              <div class="chart-track"><span class="chart-bar bar-operations" style="width: 75%;"></span></div>
+              <span class="chart-value">45</span>
+            </div>
+            <div class="chart-row">
+              <span class="chart-label">Technology</span>
+              <div class="chart-track"><span class="chart-bar bar-tech" style="width: 91%;"></span></div>
+              <span class="chart-value">78</span>
+            </div>
+            <div class="chart-row">
+              <span class="chart-label">Commercial</span>
+              <div class="chart-track"><span class="chart-bar bar-sales" style="width: 62%;"></span></div>
+              <span class="chart-value">38</span>
+            </div>
+            <div class="chart-row">
+              <span class="chart-label">Finance</span>
+              <div class="chart-track"><span class="chart-bar bar-finance" style="width: 48%;"></span></div>
+              <span class="chart-value">22</span>
+            </div>
+          </div>
+
+          <div class="chart-summary">
+            <div>
+              <span class="summary-number">274</span>
+              <span class="summary-label">Assigned Staff</span>
+            </div>
+            <div>
+              <span class="summary-number">12</span>
+              <span class="summary-label">Open Positions</span>
+            </div>
+            <div>
+              <span class="summary-number">04</span>
+              <span class="summary-label">Regional Hubs</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel panel-tall">
+          <div class="panel-head compact">
+            <div>
+              <span class="panel-kicker">Access Matrix</span>
+              <h2>Role Status</h2>
+            </div>
+            <span class="icon-badge">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 4h16v16H4z"></path>
+                <path d="M8 12h8"></path>
+                <path d="M12 8v8"></path>
+              </svg>
+            </span>
+          </div>
+          <div class="role-pulse">
+            <div class="role-pulse-top">
+              <span class="pulse-label">Decentralized Control</span>
+              <span class="pulse-score">84%</span>
+            </div>
+            <div class="pulse-meter">
+              <span class="pulse-meter-fill"></span>
+            </div>
+            <div class="role-pulse-meta">
+              <span><span class="dot dot-green"></span>Leadership</span>
+              <span><span class="dot dot-blue"></span>Team Lead</span>
+              <span><span class="dot dot-purple"></span>Field Role</span>
+            </div>
+          </div>
+          <div class="mini-list">
+            <div class="mini-list-row">
+              <span class="mini-label">Executive Board</span>
+              <span class="mini-status status-admin">Admin</span>
+            </div>
+            <div class="mini-list-row">
+              <span class="mini-label">Operations</span>
+              <span class="mini-status status-user">Manager</span>
+            </div>
+            <div class="mini-list-row">
+              <span class="mini-label">Regional Managers</span>
+              <span class="mini-status status-safe">Owner</span>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="panel table-panel">
+        <div class="panel-head">
+          <div>
+            <span class="panel-kicker">People Directory</span>
+            <h2>Position Management</h2>
+          </div>
+          <div class="panel-actions">
+            <button class="button button-chip filter-chip active" data-filter="all">All</button>
+            <button class="button button-chip filter-chip" data-filter="executive">Executive</button>
+            <button class="button button-chip filter-chip" data-filter="operations">Operations</button>
+            <button class="button button-chip filter-chip" data-filter="technology">Technology</button>
+          </div>
+        </div>
+
+        <div class="people-table-wrap">
+          <table class="people-table" id="people-table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Position</th>
+                <th>Department</th>
+                <th>Team</th>
+                <th>Status</th>
+                <th>Access</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="employee-row" data-role="executive">
+                <td>
+                  <div class="person">
+                    <span class="person-avatar avatar-one">AR</span>
+                    <div>
+                      <span class="person-name">Amanda Rivera</span>
+                      <span class="person-mail">amanda.r@companyhub.com</span>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="position-tag">Chief Executive</span></td>
+                <td>Executive</td>
+                <td>Leadership</td>
+                <td><span class="status dot-online">Active</span></td>
+                <td><span class="access-badge access-admin">Admin</span></td>
+                <td><button class="table-action">•••</button></td>
+              </tr>
+              <tr class="employee-row" data-role="operations">
+                <td>
+                  <div class="person">
+                    <span class="person-avatar avatar-two">KT</span>
+                    <div>
+                      <span class="person-name">Ken Thompson</span>
+                      <span class="person-mail">ken.t@companyhub.com</span>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="position-tag">Operations Director</span></td>
+                <td>Operations</td>
+                <td>Logistics</td>
+                <td><span class="status dot-online">Active</span></td>
+                <td><span class="access-badge access-manager">Manager</span></td>
+                <td><button class="table-action">•••</button></td>
+              </tr>
+              <tr class="employee-row" data-role="technology">
+                <td>
+                  <div class="person">
+                    <span class="person-avatar avatar-three">MP</span>
+                    <div>
+                      <span class="person-name">Mina Patel</span>
+                      <span class="person-mail">mina.p@companyhub.com</span>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="position-tag">Platform Lead</span></td>
+                <td>Technology</td>
+                <td>Engineering</td>
+                <td><span class="status dot-online">Active</span></td>
+                <td><span class="access-badge access-owner">Owner</span></td>
+                <td><button class="table-action">•••</button></td>
+              </tr>
+              <tr class="employee-row" data-role="executive">
+                <td>
+                  <div class="person">
+                    <span class="person-avatar avatar-four">NR</span>
+                    <div>
+                      <span class="person-name">Nathan Reed</span>
+                      <span class="person-mail">nathan.r@companyhub.com</span>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="position-tag">Sales Strategy</span></td>
+                <td>Commercial</td>
+                <td>Growth</td>
+                <td><span class="status dot-offline">Away</span></td>
+                <td><span class="access-badge access-user">User</span></td>
+                <td><button class="table-action">•••</button></td>
+              </tr>
+              <tr class="employee-row" data-role="technology">
+                <td>
+                  <div class="person">
+                    <span class="person-avatar avatar-five">SW</span>
+                    <div>
+                      <span class="person-name">Sarah Wilson</span>
+                      <span class="person-mail">sarah.w@companyhub.com</span>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="position-tag">Security Analyst</span></td>
+                <td>Technology</td>
+                <td>Risk</td>
+                <td><span class="status dot-online">Active</span></td>
+                <td><span class="access-badge access-admin">Admin</span></td>
+                <td><button class="table-action">•••</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="bottom-grid">
+        <section class="panel mini-panel">
+          <div class="panel-head compact">
+            <div>
+              <span class="panel-kicker">Team Activity</span>
+              <h2>Operations Feed</h2>
+            </div>
+            <button class="icon-button small">
+              <svg viewBox="0 0 24 24">
+                <path d="M5 12h14"></path>
+                <path d="M13 3l9 9-9 9"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="activity-list">
+            <div class="activity-item">
+              <span class="activity-icon icon-green"></span>
+              <div>
+                <span class="activity-title">Operations team update</span>
+                <span class="activity-meta">2 min ago · Distribution</span>
+              </div>
+            </div>
+            <div class="activity-item">
+              <span class="activity-icon icon-sky"></span>
+              <div>
+                <span class="activity-title">New role assigned</span>
+                <span class="activity-meta">17 min ago · Technology</span>
+              </div>
+            </div>
+            <div class="activity-item">
+              <span class="activity-icon icon-purple"></span>
+              <div>
+                <span class="activity-title">Commercial review</span>
+                <span class="activity-meta">1 hr ago · Growth</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel mini-panel">
+          <div class="panel-head compact">
+            <div>
+              <span class="panel-kicker">Allocation</span>
+              <h2>Position Mix</h2>
+            </div>
+            <button class="button button-chip small-button">This Week</button>
+          </div>
+          <div class="donut-area">
+            <div class="donut-wrap">
+              <div class="donut">
+                <span class="donut-center">68%</span>
+              </div>
+            </div>
+            <div class="donut-legend">
+              <div class="legend-row"><span class="legend-dot dot-green"></span><span>Leadership</span><span class="legend-value">22%</span></div>
+              <div class="legend-row"><span class="legend-dot dot-blue"></span><span>Management</span><span class="legend-value">31%</span></div>
+              <div class="legend-row"><span class="legend-dot dot-purple"></span><span>Operations</span><span class="legend-value">47%</span></div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="feature-grid">
+        <section class="panel feature-panel">
+          <div class="panel-head compact">
+            <div>
+              <span class="panel-kicker">Work Devices</span>
+              <h2>Device Allocation</h2>
+            </div>
+            <button class="button button-chip">Manage</button>
+          </div>
+          <div class="device-list" id="device-list"></div>
+        </section>
+
+        <section class="panel feature-panel">
+          <div class="panel-head compact">
+            <div>
+              <span class="panel-kicker">Document Access</span>
+              <h2>Files & Documents</h2>
+            </div>
+            <button class="button button-chip">All Access</button>
+          </div>
+          <div class="document-list" id="document-list"></div>
+        </section>
+
+        <section class="panel feature-panel">
+          <div class="panel-head compact">
+            <div>
+              <span class="panel-kicker">Project Access</span>
+              <h2>Project Control</h2>
+            </div>
+            <button class="button button-chip">Control Center</button>
+          </div>
+          <div class="project-list" id="project-list"></div>
+        </section>
+
+        <section class="panel feature-panel">
+          <div class="panel-head compact">
+            <div>
+              <span class="panel-kicker">Permission Grants</span>
+              <h2>Authorization</h2>
+            </div>
+            <button class="button button-chip">Grant Access</button>
+          </div>
+          <div class="permission-list" id="permission-list"></div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

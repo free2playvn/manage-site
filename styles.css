@@ -1312,7 +1312,8 @@ svg {
 .salary-list,
 .benefit-list,
 .leave-list,
-.timekeeping-list {
+.timekeeping-list,
+.audit-list {
   margin-top: 20px;
 }
 
@@ -1323,7 +1324,8 @@ svg {
 .salary-item,
 .benefit-item,
 .leave-item,
-.timekeeping-item {
+.timekeeping-item,
+.audit-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1342,7 +1344,8 @@ svg {
 .salary-item:hover,
 .benefit-item:hover,
 .leave-item:hover,
-.timekeeping-item:hover {
+.timekeeping-item:hover,
+.audit-item:hover {
   background: var(--panel);
   padding-left: 14px;
   padding-right: 14px;
@@ -1358,7 +1361,8 @@ svg {
 .salary-left,
 .benefit-left,
 .leave-left,
-.timekeeping-left {
+.timekeeping-left,
+.audit-left {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1371,7 +1375,8 @@ svg {
 .salary-icon,
 .benefit-icon,
 .leave-icon,
-.timekeeping-icon {
+.timekeeping-icon,
+.audit-icon {
   width: 38px;
   height: 38px;
   border-radius: 14px;
@@ -1389,7 +1394,8 @@ svg {
 .salary-icon svg,
 .benefit-icon svg,
 .leave-icon svg,
-.timekeeping-icon svg {
+.timekeeping-icon svg,
+.audit-icon svg {
   width: 20px;
   height: 20px;
 }
@@ -1401,7 +1407,8 @@ svg {
 .salary-title,
 .benefit-title,
 .leave-title,
-.timekeeping-title {
+.timekeeping-title,
+.audit-title {
   display: block;
   font-weight: 800;
   color: var(--heading);
@@ -1415,7 +1422,8 @@ svg {
 .salary-meta,
 .benefit-meta,
 .leave-meta,
-.timekeeping-meta {
+.timekeeping-meta,
+.audit-meta {
   display: block;
   color: var(--text-muted);
   font-size: 11px;

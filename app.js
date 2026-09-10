@@ -133,6 +133,7 @@ async function loadDashboardData() {
     renderLeaveList(data.leave_requests || []);
     renderTimekeepingList(data.timekeeping || []);
     renderCapacityList(data.employee_capacity || []);
+    renderAuditLogList(data.audit_logs || []);
   } catch (error) {
     console.warn('Dashboard API unavailable:', error.message);
   }
@@ -342,6 +343,29 @@ function renderCapacityList(capacityRows) {
         </div>
       </div>
       <span class="capacity-score">${Number(row.capacity_score)}%</span>
+    </div>
+  `).join('');
+}
+
+function renderAuditLogList(logs) {
+  const auditList = document.getElementById('audit-list');
+  if (!auditList || !Array.isArray(logs)) return;
+
+  auditList.innerHTML = logs.slice(0, 5).map(log => `
+    <div class="audit-item">
+      <div class="audit-left">
+        <span class="audit-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M4 19h16"></path>
+            <path d="M6 15l4-4 3 3 5-8"></path>
+          </svg>
+        </span>
+        <div>
+          <span class="audit-title">${escapeHtml(log.action)} · ${escapeHtml(log.actor)}</span>
+          <span class="audit-meta">${escapeHtml(log.resource_type)} #${Number(log.resource_id)} · ${escapeHtml(log.status)} · ${escapeHtml(log.created_at)}</span>
+        </div>
+      </div>
+      <span class="status-label ${log.status === 'success' ? '' : 'warning'}">${escapeHtml(log.status)}</span>
     </div>
   `).join('');
 }

@@ -4,7 +4,12 @@ import os
 import sqlite3
 import urllib.parse
 import hashlib
+import hmac
+import secrets
 import datetime
+import time
+import base64
+import uuid
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse
@@ -13,10 +18,42 @@ BASE_DIR = Path(__file__).resolve().parent
 API_DOC_FILE = BASE_DIR / 'openapi.json'
 DB_FILE = BASE_DIR / "company.db"
 PORT = int(os.environ.get("PORT", "8001"))
+
+# Production-friendly config via environment. This removes the need to hard-code
+# a secret/cors value inside the repository and allows a secure deployment to
+# supply a real CORS allowlist and a real JWT signing secret externally.
 ALLOWED_ORIGIN = os.environ.get("ALLOWED_ORIGIN", "http://127.0.0.1:8000")
-ALLOWED_CORS_ORIGINS = {ALLOWED_ORIGIN, "http://localhost:8000"}
+raw_cors = os.environ.get("ALLOWED_CORS_ORIGINS", "http://127.0.0.1:8000,http://localhost:8000")
+ALLOWED_CORS_ORIGINS = {origin.strip() for origin in raw_cors.split(',') if origin.strip()}
+ALLOWED_CORS_ORIGINS.add(ALLOWED_ORIGIN)
 API_ALLOW_METHODS = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-API_ALLOW_HEADERS = "Content-Type, Authorization, X-Requested-With"
+API_ALLOW_HEADERS = "Content-Type, Authorization, X-Requested-With, X-Auth-Token, X-Request-ID"
+SESSION_EXPIRES_SECONDS = 24 * 60 * 60
+RATE_LIMIT_WINDOW_SECONDS = 60
+RATE_LIMIT_MAX_REQUESTS = 120
+RATE_LIMIT_BUCKETS = {}
+
+# Prefer an environment variable or file-backed secret. Production must always
+# provide a persistent secret so restarts do not invalidate active tokens.
+JWT_SECRET = os.environ.get("JWT_SECRET")
+if not JWT_SECRET:
+    jwt_secret_file = os.environ.get("JWT_SECRET_FILE")
+    if jwt_secret_file and Path(jwt_secret_file).exists():
+        JWT_SECRET = Path(jwt_secret_file).read_text().strip()
+    else:
+        if os.environ.get("ENVIRONMENT", "development").lower() == "production":
+            raise RuntimeError("JWT_SECRET or JWT_SECRET_FILE is required in production")
+        JWT_SECRET = secrets.token_urlsafe(32)
+
+JWT_ACCESS_TTL_SECONDS = int(os.environ.get("JWT_ACCESS_TTL_SECONDS", "3600"))
+JWT_REFRESH_TTL_SECONDS = int(os.environ.get("JWT_REFRESH_TTL_SECONDS", "604800"))
+CSP_POLICY = os.environ.get("CONTENT_SECURITY_POLICY", "default-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';")
+TLS_REQUIRED = os.environ.get("HTTPS_OR_TLS", "false").lower() in {'1', 'true', 'yes'}
+ROLE_POLICY = {
+    '/api/accounts': {'admin'},
+    '/api/leave-requests/approve': {'admin', 'manager', 'hr'},
+    '/api/tasks/update': {'admin', 'manager', 'owner'},
+}
 
 
 def get_origin(handler):
@@ -204,6 +241,29 @@ def init_db():
                 FOREIGN KEY(project_id) REFERENCES projects(id),
                 FOREIGN KEY(document_id) REFERENCES documents(id)
             );
+
+            CREATE TABLE IF NOT EXISTS refresh_tokens (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                token_hash TEXT NOT NULL UNIQUE,
+                email TEXT NOT NULL,
+                role TEXT NOT NULL,
+                employee_id INTEGER,
+                department TEXT NOT NULL,
+                issued_at TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                revoked INTEGER NOT NULL DEFAULT 0
+            );
+
+            CREATE TABLE IF NOT EXISTS audit_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                action TEXT NOT NULL,
+                actor TEXT NOT NULL,
+                resource_type TEXT NOT NULL,
+                resource_id INTEGER,
+                status TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                details TEXT NOT NULL
+            );
             """
         )
 
@@ -359,9 +419,9 @@ def init_db():
         )
 
         accounts = [
-            ("Rina Bennett", "admin@companyhub.com", hashlib.sha256(b"admin123").hexdigest(), "admin", 1, "Active", "2026-09-09T00:00:00Z"),
-            ("Amanda Rivera", "amanda.r@companyhub.com", hashlib.sha256(b"employee123").hexdigest(), "employee", 1, "Active", "2026-09-09T00:00:00Z"),
-            ("Mina Patel", "mina.p@companyhub.com", hashlib.sha256(b"employee123").hexdigest(), "employee", 3, "Active", "2026-09-09T00:00:00Z"),
+            ("Rina Bennett", "admin@companyhub.com", hash_password("admin123"), "admin", 1, "Active", "2026-09-09T00:00:00Z"),
+            ("Amanda Rivera", "amanda.r@companyhub.com", hash_password("employee123"), "employee", 1, "Active", "2026-09-09T00:00:00Z"),
+            ("Mina Patel", "mina.p@companyhub.com", hash_password("employee123"), "employee", 3, "Active", "2026-09-09T00:00:00Z"),
         ]
 
         conn.executemany(
@@ -378,6 +438,18 @@ def init_db():
         conn.executemany(
             "INSERT OR IGNORE INTO tasks(title, project_id, assignee, department, status, priority, due_date, document_id, description, updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
             tasks,
+        )
+
+        audit_logs = [
+            ("login", "admin@companyhub.com", "account", 1, "success", "2026-09-09T00:00:00Z", "Admin account authenticated from dashboard UI"),
+            ("leave_approve", "Olivia Brooks", "leave_request", 1, "success", "2026-09-09T00:00:00Z", "Leave request #1 approved by reviewer"),
+            ("task_update", "Ken Thompson", "task", 2, "success", "2026-09-09T00:00:00Z", "Operations budget table task updated"),
+            ("document_access", "Mina Patel", "document", 2, "success", "2026-09-09T00:00:00Z", "Project roadmap document reviewed"),
+        ]
+
+        conn.executemany(
+            "INSERT OR IGNORE INTO audit_logs(action, actor, resource_type, resource_id, status, created_at, details) VALUES(?,?,?,?,?,?,?)",
+            audit_logs,
         )
 
         conn.commit()
@@ -398,9 +470,11 @@ def api_json(handler, payload, status=200):
     handler.send_header("Vary", "Origin")
     handler.send_header("X-Content-Type-Options", "nosniff")
     handler.send_header("X-Frame-Options", "DENY")
-    handler.send_header("Content-Security-Policy", "default-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';")
+    handler.send_header("Content-Security-Policy", CSP_POLICY)
     handler.send_header("Referrer-Policy", "no-referrer")
     handler.send_header("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+    if TLS_REQUIRED:
+        handler.send_header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
     handler.end_headers()
     handler.wfile.write(body)
 
@@ -423,6 +497,194 @@ def api_stats():
         }
     finally:
         conn.close()
+
+
+def get_request_ip(handler):
+    return str(handler.headers.get('X-Forwarded-For') or handler.client_address[0] if hasattr(handler, 'client_address') else 'unknown').split(',')[0].strip()
+
+
+def apply_rate_limit(handler):
+    ip = get_request_ip(handler)
+    now = time.time()
+    bucket = RATE_LIMIT_BUCKETS.setdefault(ip, [])
+    bucket = [stamp for stamp in bucket if now - stamp < RATE_LIMIT_WINDOW_SECONDS]
+    if len(bucket) >= RATE_LIMIT_MAX_REQUESTS:
+        RATE_LIMIT_BUCKETS[ip] = bucket
+        return False
+    bucket.append(now)
+    RATE_LIMIT_BUCKETS[ip] = bucket
+    return True
+
+
+def audit_gate(handler, action, resource_type, resource_id, actor, status='success', details=''):
+    try:
+        conn = connect_db()
+        now = datetime.datetime.utcnow().replace(microsecond=0).isoformat() + 'Z'
+        conn.execute(
+            "INSERT INTO audit_logs(action, actor, resource_type, resource_id, status, created_at, details) VALUES(?,?,?,?,?,?,?)",
+            (action, actor, resource_type, resource_id, status, now, details),
+        )
+        conn.commit()
+    except Exception:
+        pass
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+def audit_log_route(handler, action, resource_type, details=''):
+    session = get_session(handler)
+    actor = (session or {}).get('email') if session else 'anonymous'
+    # Resource id is route scoped here and remains nullable; the event remains useful for endpoint-level auditing.
+    audit_gate(handler, action, resource_type, None, actor, 'success', details)
+
+
+def b64url(data: bytes):
+    return base64.urlsafe_b64encode(data).decode('ascii').rstrip('=')
+
+
+def b64url_decode(segment: str):
+    padding = '=' * ((4 - len(segment) % 4) % 4)
+    return base64.urlsafe_b64decode(segment + padding)
+
+
+def jwt_sign(payload):
+    header = {'alg': 'HS256', 'typ': 'JWT'}
+    header_segment = b64url(json.dumps(header, separators=(',', ':'), sort_keys=True).encode('utf-8'))
+    payload_segment = b64url(json.dumps(payload, separators=(',', ':'), sort_keys=True).encode('utf-8'))
+    signing_input = f'{header_segment}.{payload_segment}'.encode('utf-8')
+    signature = hmac.new(JWT_SECRET.encode('utf-8'), signing_input, hashlib.sha256).digest()
+    return f'{header_segment}.{payload_segment}.{b64url(signature)}'
+
+
+def jwt_verify(token):
+    parts = token.split('.')
+    if len(parts) != 3:
+        return None
+    header_segment, payload_segment, sig_segment = parts
+    signing_input = f'{header_segment}.{payload_segment}'.encode('utf-8')
+    expected = b64url(hmac.new(JWT_SECRET.encode('utf-8'), signing_input, hashlib.sha256).digest())
+    if not hmac.compare_digest(sig_segment, expected):
+        return None
+    try:
+        payload = json.loads(b64url_decode(payload_segment))
+    except Exception:
+        return None
+    return payload
+
+
+def jwt_refresh_token_for_user(email, role, employee_id, department, conn=None):
+    now_ts = int(time.time())
+    exp_ts = now_ts + JWT_REFRESH_TTL_SECONDS
+    jti = uuid.uuid4().hex
+    refresh_payload = {
+        'sub': email,
+        'email': email,
+        'role': role,
+        'employee_id': employee_id,
+        'department': department,
+        'iat': now_ts,
+        'exp': exp_ts,
+        'type': 'refresh',
+        'jti': jti,
+    }
+    token = jwt_sign(refresh_payload)
+    token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
+    issued_at = datetime.datetime.utcnow().replace(microsecond=0).isoformat() + 'Z'
+    expires_at = datetime.datetime.fromtimestamp(exp_ts).replace(microsecond=0).isoformat() + 'Z'
+    created_new_conn = conn is None
+    if created_new_conn:
+        conn = connect_db()
+    try:
+        conn.execute("DELETE FROM refresh_tokens WHERE email = ?", (email,))
+        conn.execute("INSERT INTO refresh_tokens(token_hash, email, role, employee_id, department, issued_at, expires_at, revoked) VALUES(?,?,?,?,?,?,?,0)",
+                     (token_hash, email, role, employee_id, department, issued_at, expires_at))
+        if created_new_conn:
+            conn.commit()
+        return token
+    finally:
+        if created_new_conn:
+            conn.close()
+
+
+def jwt_revoke_refresh_token(token):
+    token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
+    conn = connect_db()
+    try:
+        conn.execute("UPDATE refresh_tokens SET revoked = 1 WHERE token_hash = ?", (token_hash,))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def jwt_get_access_token(email, role, employee_id, department):
+    now = int(time.time())
+    payload = {
+        'sub': email,
+        'email': email,
+        'role': role,
+        'employee_id': employee_id,
+        'department': department,
+        'iat': now,
+        'exp': now + JWT_ACCESS_TTL_SECONDS,
+        'type': 'access'
+    }
+    return jwt_sign(payload)
+
+
+def jwt_get_refresh_token(email, role, employee_id, department):
+    return jwt_refresh_token_for_user(email, role, employee_id, department)
+
+
+def get_token_from_header(handler):
+    auth = handler.headers.get('Authorization', '')
+    if auth.startswith('Bearer '):
+        return auth.split(' ', 1)[1].strip()
+    token = handler.headers.get('X-Auth-Token') or handler.headers.get('X-Session-Token') or ''
+    return token.strip()
+
+
+def get_session(handler):
+    token = get_token_from_header(handler)
+    if not token:
+        return None
+    try:
+        payload = jwt_verify(token)
+        if not payload or payload.get('type') != 'access':
+            return None
+        if int(payload.get('exp', 0)) < int(time.time()):
+            return None
+        return {
+            'email': payload.get('email'),
+            'role': payload.get('role'),
+            'employee_id': payload.get('employee_id'),
+            'department': payload.get('department'),
+            'status': 'Active',
+        }
+    except Exception:
+        return None
+
+
+def require_role(handler, allowed_roles):
+    session = get_session(handler)
+    if not session:
+        api_json(handler, {'error': 'authentication required'}, status=401)
+        return False
+    role = str(session.get('role', '')).lower()
+    if role not in {r.lower() for r in allowed_roles}:
+        api_json(handler, {'error': 'forbidden', 'required_roles': sorted([r.lower() for r in allowed_roles])}, status=403)
+        return False
+    return True
+
+
+def create_session_from_login(conn, email, role, employee_id, status, department=None):
+    return {
+        'access_token': jwt_get_access_token(email, role, employee_id, department or 'Unknown'),
+        'refresh_token': jwt_get_refresh_token(email, role, employee_id, department or 'Unknown'),
+        'expires_in': JWT_ACCESS_TTL_SECONDS,
+    }
 
 
 def api_departments():
@@ -577,8 +839,91 @@ def api_accounts():
         conn.close()
 
 
+def api_audit_logs():
+    conn = connect_db()
+    try:
+        rows = conn.execute("SELECT id, action, actor, resource_type, resource_id, status, created_at, details FROM audit_logs ORDER BY id DESC LIMIT 50").fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        conn.close()
+
+
+PBKDF2_ROUNDS = 120000
+PBKDF2_SALT_BYTES = 16
+
+
 def hash_password(password):
-    return hashlib.sha256(password.encode('utf-8')).hexdigest()
+    """Return a PBKDF2-HMAC-SHA256 password record with unique salt per hash."""
+    salt = secrets.token_bytes(PBKDF2_SALT_BYTES)
+    digest = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, PBKDF2_ROUNDS)
+    return f"pbkdf2_sha256${PBKDF2_ROUNDS}${salt.hex()}${digest.hex()}"
+
+
+def verify_password(password, stored_hash):
+    """Verify PBKDF2-SHA256 and gracefully fall back to the old SHA-256 digest format."""
+    if not password or not stored_hash:
+        return False
+    if stored_hash.startswith('pbkdf2_sha256$'):
+        try:
+            _, iterations, salt_hex, expected_hex = stored_hash.split('$', 3)
+            iterations = int(iterations)
+            salt = bytes.fromhex(salt_hex)
+            expected = bytes.fromhex(expected_hex)
+            derived = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, iterations)
+            return hmac.compare_digest(derived, expected)
+        except Exception:
+            return False
+    # Legacy file-friendly migration path for existing SHA-256-only records.
+    return hmac.compare_digest(hashlib.sha256(password.encode('utf-8')).hexdigest(), stored_hash)
+
+
+def jwt_policy_for_employee(conn, employee_id, role):
+    # Trust the stored account role first. That keeps login role policy separated from
+    # the employee/department metadata unless the account role itself is not one of the
+    # supported route policy labels. This prevents access_level/department noise from
+    # overriding the account's intended low-privilege role.
+    account_role = str(role or '').strip().lower()
+    if account_role in {'admin', 'manager', 'owner', 'employee', 'hr'}:
+        dept_name = 'Unknown'
+        row = conn.execute(
+            """
+            SELECT d.name AS department
+            FROM employees e
+            JOIN departments d ON d.id = e.department_id
+            WHERE e.id = ?
+            """,
+            (employee_id,),
+        ).fetchone()
+        if row:
+            dept_name = str(row['department']).strip()
+        return account_role, dept_name
+
+    # Fallback inference only if the account role is not canonical.
+    row = conn.execute(
+        """
+        SELECT e.id, e.name, e.email, e.role_id, e.department_id,
+               r.name AS role_name, d.name AS department
+        FROM employees e
+        JOIN roles r ON r.id = e.role_id
+        JOIN departments d ON d.id = e.department_id
+        WHERE e.id = ?
+        """,
+        (employee_id,),
+    ).fetchone()
+    if not row:
+        return account_role, 'Unknown'
+
+    role_name = str(row['role_name']).strip().lower()
+    dept_name = str(row['department']).strip()
+    policy_alias = {
+        'executive board': 'admin',
+        'operations director': 'manager',
+        'sales strategy': 'manager',
+        'platform lead': 'owner',
+        'finance lead': 'owner',
+        'security analyst': 'admin',
+    }
+    return policy_alias.get(role_name, account_role), dept_name
 
 
 def api_login(handler):
@@ -596,12 +941,18 @@ def api_login(handler):
 
     conn = connect_db()
     try:
-        row = conn.execute("SELECT id, name, email, role, employee_id, status FROM accounts WHERE email = ? AND password_hash = ?", (email, hash_password(password))).fetchone()
+        row = conn.execute("SELECT id, name, email, role, employee_id, status, password_hash FROM accounts WHERE email = ?", (email,)).fetchone()
         if not row:
             api_json(handler, {'error': 'invalid credentials'}, status=401)
             return
+        if not verify_password(password, row['password_hash']):
+            api_json(handler, {'error': 'invalid credentials'}, status=401)
+            return
         employee = dict(row)
-        api_json(handler, {'message': 'login_ok', 'account': employee})
+        employee.pop('password_hash', None)
+        role_policy, dept_name = jwt_policy_for_employee(conn, row['employee_id'], row['role'])
+        login_payload = create_session_from_login(conn, email, role_policy, row['employee_id'], row['status'], dept_name)
+        api_json(handler, {'message': 'login_ok', 'account': employee, 'token': login_payload['access_token'], 'refresh_token': login_payload['refresh_token'], 'expires_in': JWT_ACCESS_TTL_SECONDS})
     except Exception as exc:
         api_json(handler, {'error': str(exc)}, status=500)
     finally:
@@ -638,11 +989,14 @@ def api_create_account(handler):
             return
 
         now = datetime.datetime.utcnow().replace(microsecond=0).isoformat() + 'Z'
+        password_hash = hash_password(password)
         cur = conn.execute("INSERT INTO accounts(name, email, password_hash, role, employee_id, status, created_at) VALUES(?,?,?,?,?,?,?)",
-            (name, email, hash_password(password), role, employee_id, status, now))
+            (name, email, password_hash, role, employee_id, status, now))
         new_id = cur.lastrowid
         row = conn.execute("SELECT id, name, email, role, employee_id, status, created_at FROM accounts WHERE id = ?", (new_id,)).fetchone()
-        api_json(handler, {'message': 'account_created', 'account': dict(row)})
+        policy_role, dept_name = jwt_policy_for_employee(conn, employee_id, role)
+        login_payload = create_session_from_login(conn, email, policy_role, employee_id, status, dept_name)
+        api_json(handler, {'message': 'account_created', 'account': dict(row), 'token': login_payload['access_token'], 'refresh_token': login_payload['refresh_token'], 'expires_in': JWT_ACCESS_TTL_SECONDS})
         conn.commit()
     except Exception as exc:
         api_json(handler, {'error': str(exc)}, status=500)
@@ -685,14 +1039,81 @@ def api_register_leave(handler):
 
     try:
         conn = connect_db()
-        conn.execute("INSERT INTO leave_requests(employee, department, leave_type, start_date, end_date, days, status, reviewer) VALUES(?,?,?,?,?,?,?,?)",
+        cur = conn.execute("INSERT INTO leave_requests(employee, department, leave_type, start_date, end_date, days, status, reviewer) VALUES(?,?,?,?,?,?,?,?)",
             (payload['employee'], payload['department'], payload['leave_type'], payload['start_date'], payload['end_date'], int(payload['days']), 'Requested', payload['reviewer']))
+        leave_id = cur.lastrowid
         conn.commit()
         api_json(handler, {'message': 'leave_registered', 'leave_request': {'employee': payload['employee'], 'status': 'Requested'}})
     except Exception as exc:
         api_json(handler, {'error': str(exc)}, status=500)
     finally:
         conn.close()
+
+
+def api_refresh(handler):
+    try:
+        content_length = int(handler.headers.get('Content-Length', '0'))
+        payload = json.loads(handler.rfile.read(content_length)) if content_length else {}
+    except Exception:
+        payload = {}
+
+    refresh_token = str(payload.get('refresh_token', '')).strip()
+    if not refresh_token:
+        api_json(handler, {'error': 'refresh_token required'}, status=400)
+        return
+
+    signed = jwt_verify(refresh_token)
+    if not signed or signed.get('type') != 'refresh':
+        api_json(handler, {'error': 'invalid refresh token'}, status=401)
+        return
+    if int(signed.get('exp', 0)) < int(time.time()):
+        api_json(handler, {'error': 'refresh token expired'}, status=401)
+        return
+
+    token_hash = hashlib.sha256(refresh_token.encode('utf-8')).hexdigest()
+    conn = connect_db()
+    try:
+        row = conn.execute("SELECT token_hash, email, role, employee_id, department, expires_at, revoked FROM refresh_tokens WHERE token_hash = ?", (token_hash,)).fetchone()
+        if not row:
+            api_json(handler, {'error': 'invalid refresh token'}, status=401)
+            return
+        if int(row['revoked']) == 1:
+            api_json(handler, {'error': 'refresh token revoked'}, status=401)
+            return
+        if str(row['expires_at']) < datetime.datetime.utcnow().replace(microsecond=0).isoformat() + 'Z':
+            api_json(handler, {'error': 'refresh token expired'}, status=401)
+            return
+
+        # Rotate within the same DB connection to avoid cross-thread connection deadlocks.
+        email = row['email']
+        role = row['role']
+        employee_id = row['employee_id']
+        department = row['department']
+        new_refresh = jwt_refresh_token_for_user(email, role, employee_id, department, conn=conn)
+        new_access = jwt_get_access_token(email, role, employee_id, department)
+        conn.execute("UPDATE refresh_tokens SET revoked = 1 WHERE token_hash = ?", (token_hash,))
+        conn.commit()
+        api_json(handler, {'message': 'token_refreshed', 'token': new_access, 'refresh_token': new_refresh, 'expires_in': JWT_ACCESS_TTL_SECONDS})
+    except Exception as exc:
+        api_json(handler, {'error': str(exc)}, status=500)
+    finally:
+        conn.close()
+
+
+def api_logout(handler):
+    session = get_session(handler)
+    email = (session or {}).get('email')
+    if email:
+        conn = connect_db()
+        try:
+            conn.execute("UPDATE refresh_tokens SET revoked = 1 WHERE email = ?", (email,))
+            conn.commit()
+        finally:
+            conn.close()
+    token = get_token_from_header(handler)
+    if token:
+        jwt_revoke_refresh_token(token)
+    api_json(handler, {'message': 'logged_out'})
 
 
 def api_update_document_task(handler):
@@ -717,14 +1138,9 @@ def api_update_document_task(handler):
         api_json(handler, {'error': 'no update fields'}, status=400)
         return
 
-    values = [payload[key] for key in allowed if key in payload]
-    values.append(task_id)
     conn = connect_db()
     try:
         query = "UPDATE tasks SET " + ", ".join(fields) + ", updated_at = ? WHERE id = ?"
-        values.append(datetime.datetime.utcnow().replace(microsecond=0).isoformat() + 'Z')
-        values = values[:-1] + [values[-1]] if False else values
-        # values list is task_id field last in insert order; build in one pass
         query_values = []
         for key in allowed:
             if key in payload:
@@ -757,7 +1173,7 @@ def api_approve_leave_request(handler):
 
     conn = connect_db()
     try:
-        existing = conn.execute("SELECT id FROM leave_requests WHERE id = ?", (leave_id,)).fetchone()
+        existing = conn.execute("SELECT id, employee FROM leave_requests WHERE id = ?", (leave_id,)).fetchone()
         if not existing:
             api_json(handler, {'error': 'leave request not found'}, status=404)
             return
@@ -835,41 +1251,84 @@ class CompanyHandler(SimpleHTTPRequestHandler):
     def do_POST(self):
         parsed = urlparse(self.path)
         path = parsed.path
+        if not apply_rate_limit(self):
+            api_json(self, {'error': 'rate limit exceeded'}, status=429)
+            return
         if path == '/api/login':
             api_login(self)
+            audit_log_route(self, 'login', 'account', 'Authentication route accepted via POST')
+            return
+        if path == '/api/refresh':
+            api_refresh(self)
+            audit_log_route(self, 'refresh', 'token', 'Refresh rotation route accepted via POST')
             return
         if path == '/api/accounts':
+            if not require_role(self, {'admin'}):
+                return
             api_create_account(self)
+            audit_log_route(self, 'account_create', 'account', 'Account creation route accepted via POST')
             return
         if path == '/api/leave-requests/register':
             api_register_leave(self)
+            audit_log_route(self, 'leave_register', 'leave_request', 'Leave registration route accepted via POST')
             return
         if path == '/api/leave-requests/approve':
+            if not require_role(self, {'admin', 'manager', 'hr'}):
+                return
             api_approve_leave_request(self)
+            audit_log_route(self, 'leave_approve', 'leave_request', 'Leave approval route accepted via POST')
             return
         if path == '/api/tasks/update':
+            if not require_role(self, {'admin', 'manager', 'owner'}):
+                return
             api_update_document_task(self)
+            audit_log_route(self, 'task_update', 'task', 'Task update route accepted via POST')
             return
         api_json(self, {'error': 'Endpoint not found'}, status=404)
 
     def do_PATCH(self):
         parsed = urlparse(self.path)
         path = parsed.path
+        if not apply_rate_limit(self):
+            api_json(self, {'error': 'rate limit exceeded'}, status=429)
+            return
         if path == '/api/leave-requests/approve':
+            if not require_role(self, {'admin', 'manager', 'hr'}):
+                return
             api_approve_leave_request(self)
+            audit_log_route(self, 'leave_approve', 'leave_request', 'Leave approval route accepted via PATCH')
+            return
+        api_json(self, {'error': 'Endpoint not found'}, status=404)
+
+    def do_DELETE(self):
+        parsed = urlparse(self.path)
+        path = parsed.path
+        if not apply_rate_limit(self):
+            api_json(self, {'error': 'rate limit exceeded'}, status=429)
+            return
+        if path == '/api/logout':
+            api_logout(self)
+            audit_log_route(self, 'logout', 'token', 'Logout route accepted via DELETE')
             return
         api_json(self, {'error': 'Endpoint not found'}, status=404)
 
     def do_GET(self):
         path = urlparse(self.path).path
+        if not apply_rate_limit(self):
+            api_json(self, {'error': 'rate limit exceeded'}, status=429)
+            return
         if path == '/openapi.json':
             self.serve_docs()
             return
         if path.startswith('/api/'):
             if path == '/api/me':
+                if not require_role(self, {'admin', 'employee', 'manager', 'owner', 'hr'}):
+                    return
                 api_employee_profile(self)
                 return
             if path.startswith('/api/profile'):
+                if not require_role(self, {'admin', 'employee', 'manager', 'owner', 'hr'}):
+                    return
                 api_employee_profile(self)
                 return
             self.handle_api(path)
@@ -921,6 +1380,11 @@ class CompanyHandler(SimpleHTTPRequestHandler):
 
     def handle_api(self, path):
         try:
+            # role gate for sensitive resources
+            if path in ROLE_POLICY:
+                if not require_role(self, ROLE_POLICY[path]):
+                    return
+
             if path == '/api/overview':
                 payload = {
                     "stats": api_stats(),
@@ -937,6 +1401,7 @@ class CompanyHandler(SimpleHTTPRequestHandler):
                     "leave_requests": api_leave_requests(),
                     "timekeeping": api_timekeeping(),
                     "employee_capacity": api_employee_capacity(),
+                    "audit_logs": api_audit_logs(),
                 }
                 api_json(self, payload)
             elif path == '/api/stats':
@@ -967,11 +1432,17 @@ class CompanyHandler(SimpleHTTPRequestHandler):
                 api_json(self, api_leave_requests())
             elif path == '/api/timekeeping':
                 api_json(self, api_timekeeping())
+            elif path == '/api/audit-logs':
+                if not require_role(self, {'admin', 'manager', 'owner'}):
+                    return
+                api_json(self, api_audit_logs())
             elif path == '/api/employee-capacity':
                 api_json(self, api_employee_capacity())
             elif path == '/api/capacity':
                 api_json(self, api_employee_capacity())
             elif path == '/api/accounts':
+                if not require_role(self, {'admin'}):
+                    return
                 api_json(self, api_accounts())
             elif path == '/api/tasks':
                 api_json(self, api_tasks())

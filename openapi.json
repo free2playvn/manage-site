@@ -96,6 +96,12 @@
         "responses": { "200": { "description": "Timekeeping" } }
       }
     },
+    "/api/audit-logs": {
+      "get": {
+        "summary": "Return audit trail records for login, leave approval, task update, and document access activity",
+        "responses": { "200": { "description": "Audit logs" } }
+      }
+    },
     "/api/accounts": {
       "get": {
         "summary": "Return created accounts for employees and administrators",
